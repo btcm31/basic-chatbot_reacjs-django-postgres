@@ -1,0 +1,36 @@
+version: "3.9"
+   
+services:
+    db:
+        image: postgres
+        volumes:
+            - ./data/db:/app/db/postgresql/data
+        environment:
+            - POSTGRES_DB=postgres
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_HOST_AUTH_METHOD=trust
+    backend:
+        build: ./backend
+        command: ["python","manage.py","runserver","0.0.0.0:8000"]
+        volumes:
+            - ./backend:/app/backend
+        ports:
+            - "8000:8000"
+        depends_on:
+        #chi dinh db chay truoc web
+            - db
+    frontend:
+        build: ./frontend
+        volumes:
+            - ./frontend:/app/frontend
+            - /app/frontend/node_modules
+        ports:
+            - "3000:3000"
+        command: ["npm", "start"]
+    nlp:
+        build: ./nlp 
+        volumes:
+            - ./nlp:/app/nlp
+    
+    
