@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+import os
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -53,7 +53,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'myDjango.urls'
-
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -76,18 +76,30 @@ WSGI_APPLICATION = 'myDjango.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+#username:cmchatbot
+#pass: congminh
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'localhost',
-        'PORT': 5432,
+        'HOST': os.environ.get('DB_HOST'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASS'),
     }
 }
+##congminh/congminh
 
 
+''' DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': 'localhost',
+        'NAME': 'conversations',
+        'USER': 'postgres',
+        'PASSWORD': 'congminh',
+    }
+} '''
+SESSION_COOKIE_SECURE = False
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

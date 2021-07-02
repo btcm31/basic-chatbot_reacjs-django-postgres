@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import regex as re
 import bogo
-
+from .models import Conversation
 
 model = tf.keras.models.load_model('./bestmodel')
 token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
@@ -145,7 +145,6 @@ def normalizeString(s):
     s = re.sub(r"\s+", r" ", s).strip()
     return s
 def text_preprocess(document):
-    document = re.sub(r'Khách [\w]*:','',document)
     # remove html character
     document = re.sub(r'<[^>]*>', '', document)
     #uwf=>ừ,....
@@ -165,15 +164,18 @@ def text_preprocess(document):
     return document
 
 def predictJson(request):
-    print(request.body)
     data = json.loads(request.body)
     text = data['text'].encode().decode('utf-8')
     text = text_preprocess(text)
-    print(text)
     pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
     lb = label[np.argmax(pre)]
 
     return JsonResponse({'label': lb})
-
-def predictFile(request):
-    return JsonResponse({'score':1})
+#python manage.py migrate --run-syncdb
+def conversation(request):
+    data = json.loads(request.body)
+    conv = data['conversation'].encode().decode('utf-8')
+    nums = Conversation.objects.count() + 1
+    conversation = Conversation.objects.create(content=conv,num=nums)
+    print(conv)
+    return JsonResponse({'conv': conv})

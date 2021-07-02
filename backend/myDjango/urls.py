@@ -21,5 +21,5 @@ from django.views.decorators.csrf import csrf_exempt
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('predictJson',csrf_exempt(views.predictJson), name = "Chatbot Application"),
-    path('predictFile',csrf_exempt(views.predictFile), name = "Chatbot File"),
+    path('conversation',csrf_exempt(views.conversation), name = "conversation"),
 ]

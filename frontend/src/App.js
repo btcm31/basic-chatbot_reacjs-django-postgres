@@ -7,7 +7,8 @@ class App extends Component {
   constructor(props){
     super(props);
     this.state = {
-      prediction: ''
+      prediction: '',
+      conversation:[]
     };
     this.theme = {
       background: '#f5f8fb',
@@ -34,7 +35,24 @@ class App extends Component {
       this.setState({prediction:respJ.label})
     });
   };
-  
+  async conversationUpdate(conv){
+    var conver = "";
+    for (let i = 0; i < conv.length; i++) {
+      conver += conv[i] + "\n";
+    }
+    const url = "http://localhost:8000/conversation";
+    const bodyData = JSON.stringify({
+      "conversation" : conver
+    });
+    const reqOpt = {method:"POST",headers:{"Content-type":"application/json"},body:bodyData};
+    await fetch(url,reqOpt)
+    .then((resp)=>resp.json())
+    .then((respJ)=> {
+      console.log(respJ.conv)
+      console.log('conversation updated!')
+      this.setState({conversation:[]})
+    });
+  }
   render(){
     return (
       <div className="App">
@@ -47,16 +65,31 @@ class App extends Component {
             steps={[
               {
                 id: '1',
-                message: 'Welcome!',
+                message: () => {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Welcome!')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Welcome!'
+                },
                 trigger: 'user',
               },
               {
                 id: 'user',
                 user: true,
                 trigger: (value)=>{
+                  const {conversation} = this.state;
+                  var newcon = conversation;
                   if(!value.value){
+                    newcon.push('User: ImageURL')
+                    console.log(newcon)
+                    this.setState({conversation:newcon})
                     return 'user'
                   }
+                  newcon.push('User: '+ value.value)
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
                   this.predict(value.value)
                   return 'bot'
                 }
@@ -103,57 +136,135 @@ class App extends Component {
               },
               {
                 id: 'Inform',
-                message: 'Ok để mình lưu thông tin của bạn luôn.',
+                message:() => {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Ok để mình lưu thông tin của bạn luôn.')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Ok để mình lưu thông tin của bạn luôn.'
+                },
                 trigger:'user'
               },
               {
                 id: 'Request',
-                message: 'Để mình check thử nha',
+                message:() => {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Để mình check thử nha')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Để mình check thử nha'
+                },
                 trigger: 'user',
               },
               {
                 id: 'feedback',
-                message: 'Dạ cảm ơn về phản hồi của bạn ạ!',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Dạ cảm ơn về phản hồi của bạn ạ!')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Dạ cảm ơn về phản hồi của bạn ạ!'
+                },
                 trigger: 'user'
               },
               {
                 id: 'Other',
-                message: 'Shop chưa hiểu câu hỏi của bạn :(',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Shop chưa hiểu câu hỏi của bạn :(')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Shop chưa hiểu câu hỏi của bạn :('
+                },
                 trigger:'user'
               },
               {
                 id: 'Done',
-                message: 'Okie cảm ơn bạn nhiều',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Dạ cảm ơn bạn nhiều')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  this.conversationUpdate(newcon)
+                  return 'Dạ cảm ơn bạn nhiều'
+                },
                 trigger: 'user',
               },
               {
                 id: 'OK',
-                message: 'OKi bạn luôn',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: OKi bạn')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'OKi bạn'
+                },
                 trigger: 'user'
               },
               {
                 id: 'Changing',
-                message: 'Dạ bạn muốn đổi sản phẩm nào á',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Dạ bạn muốn đổi sản phẩm nào á')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Dạ bạn muốn đổi sản phẩm nào á'
+                },
                 trigger:'user'
               },
               {
                 id: 'Return',
-                message: 'Bạn muốn đổi spham hả',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Bạn muốn đổi spham hả')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Bạn muốn đổi spham hả'
+                },
                 trigger: 'user',
               },
               {
                 id: 'Hello',
-                message: 'Hello bạn, bạn cần tư vấn gì á',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Hello bạn, bạn cần tư vấn gì á')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Hello bạn, bạn cần tư vấn gì á'
+                },
                 trigger: 'user'
               },
               {
                 id: 'Order',
-                message: 'Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.'
+                },
                 trigger: 'user',
               },
               {
                 id: 'Connect',
-                message: 'Hello bạn, bạn cần tư vấn gì á',
+                message:()=> {
+                  const {conversation} = this.state;
+                  var newcon = conversation;
+                  newcon.push('Bot: Hello bạn, bạn cần tư vấn gì á')
+                  console.log(newcon)
+                  this.setState({conversation:newcon})
+                  return 'Hello bạn, bạn cần tư vấn gì á'
+                },
                 trigger: 'user'
               },
             ]}

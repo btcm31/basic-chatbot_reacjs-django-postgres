@@ -485,18 +485,18 @@ class ChatBot extends Component {
       return;
     if (!isInvalid) {
       var step = {};
-      if(this.state.uploading){
+      if(uploading){
         step = {
-          message: this.state.url,
+          message: url,
           value: inputValue,
-          uploading: this.state.uploading
+          uploading: uploading
         };
       }
       else{
         step = {
           message: inputValue,
           value: inputValue,
-          uploading: this.state.uploading
+          uploading: uploading
         };
       }
       this.setState({uploading:false})

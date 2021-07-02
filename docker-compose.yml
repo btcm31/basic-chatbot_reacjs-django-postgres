@@ -2,35 +2,50 @@ version: "3.9"
    
 services:
     db:
-        image: postgres
+        image: postgres:latest
+        container_name: postgresql
         volumes:
-            - ./data/db:/app/db/postgresql/data
+            - tutorial-volume:/app/postgresql/data
+        restart: always
+        ports:
+            - "5432:5432"
         environment:
-            - POSTGRES_DB=postgres
+            - POSTGRES_DB=conversations
             - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=postgres
-            - POSTGRES_HOST_AUTH_METHOD=trust
-    backend:
+            - POSTGRES_PASSWORD=congminh
+        networks:
+            - djangonetwork
+    backend:    
         build: ./backend
-        command: ["python","manage.py","runserver","0.0.0.0:8000"]
+        container_name: django_backend
+        command: >
+            sh -c "python manage.py migrate --run-syncdb && python manage.py runserver 0.0.0.0:8000"
         volumes:
             - ./backend:/app/backend
+        environment:
+            - DB_HOST=db
+            - DB_USER=postgres
+            - DB_PASS=congminh
+            - DB_NAME=conversations
         ports:
             - "8000:8000"
+        networks:
+            - djangonetwork
         depends_on:
-        #chi dinh db chay truoc web
             - db
     frontend:
         build: ./frontend
+        container_name: react_frontend
         volumes:
             - ./frontend:/app/frontend
             - /app/frontend/node_modules
         ports:
             - "3000:3000"
         command: ["npm", "start"]
-    nlp:
-        build: ./nlp 
-        volumes:
-            - ./nlp:/app/nlp
+volumes:
+    tutorial-volume:
+networks:
+    djangonetwork:
+        driver: bridge
     
     
