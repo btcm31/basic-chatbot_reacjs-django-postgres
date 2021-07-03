@@ -88,8 +88,6 @@ DATABASES = {
     }
 }
 ##congminh/congminh
-
-
 ''' DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

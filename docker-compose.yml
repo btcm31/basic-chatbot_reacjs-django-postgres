@@ -19,7 +19,7 @@ services:
         build: ./backend
         container_name: django_backend
         command: >
-            sh -c "python manage.py migrate --run-syncdb && python manage.py runserver 0.0.0.0:8000"
+            sh -c "python manage.py runserver 0.0.0.0:8000"
         volumes:
             - ./backend:/app/backend
         environment:

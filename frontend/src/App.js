@@ -48,8 +48,6 @@ class App extends Component {
     await fetch(url,reqOpt)
     .then((resp)=>resp.json())
     .then((respJ)=> {
-      console.log(respJ.conv)
-      console.log('conversation updated!')
       this.setState({conversation:[]})
     });
   }
@@ -69,7 +67,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Welcome!')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Welcome!'
                 },
@@ -83,12 +80,10 @@ class App extends Component {
                   var newcon = conversation;
                   if(!value.value){
                     newcon.push('User: ImageURL')
-                    console.log(newcon)
                     this.setState({conversation:newcon})
                     return 'user'
                   }
                   newcon.push('User: '+ value.value)
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   this.predict(value.value)
                   return 'bot'
@@ -140,7 +135,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Ok để mình lưu thông tin của bạn luôn.')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Ok để mình lưu thông tin của bạn luôn.'
                 },
@@ -152,7 +146,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Để mình check thử nha')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Để mình check thử nha'
                 },
@@ -164,7 +157,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Dạ cảm ơn về phản hồi của bạn ạ!')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Dạ cảm ơn về phản hồi của bạn ạ!'
                 },
@@ -176,7 +168,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Shop chưa hiểu câu hỏi của bạn :(')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Shop chưa hiểu câu hỏi của bạn :('
                 },
@@ -188,7 +179,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Dạ cảm ơn bạn nhiều')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   this.conversationUpdate(newcon)
                   return 'Dạ cảm ơn bạn nhiều'
@@ -201,7 +191,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: OKi bạn')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'OKi bạn'
                 },
@@ -213,7 +202,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Dạ bạn muốn đổi sản phẩm nào á')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Dạ bạn muốn đổi sản phẩm nào á'
                 },
@@ -225,7 +213,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Bạn muốn đổi spham hả')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Bạn muốn đổi spham hả'
                 },
@@ -237,7 +224,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Hello bạn, bạn cần tư vấn gì á')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Hello bạn, bạn cần tư vấn gì á'
                 },
@@ -249,7 +235,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.'
                 },
@@ -261,7 +246,6 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   newcon.push('Bot: Hello bạn, bạn cần tư vấn gì á')
-                  console.log(newcon)
                   this.setState({conversation:newcon})
                   return 'Hello bạn, bạn cần tư vấn gì á'
                 },

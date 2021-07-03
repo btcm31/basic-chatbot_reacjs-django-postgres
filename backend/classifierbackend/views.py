@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from django.http import JsonResponse
 import tensorflow as tf
 import pickle
@@ -11,6 +9,7 @@ import regex as re
 import bogo
 from .models import Conversation
 
+#Load model
 model = tf.keras.models.load_model('./bestmodel')
 token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
 label = pickle.load(open('./bestmodel/saved_label.pickle','rb'))
@@ -153,9 +152,8 @@ def text_preprocess(document):
     document = document.lower()
     #tach dau cau
     document = normalizeString(document)
-
     document = chuan_hoa_dau_cau_tieng_viet(document)
-
+    #convert to unicode
     document = covert_unicode(document)
     # remove error character
     document = re.sub(r'[^\s\wáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ_]',' ',document)
@@ -177,5 +175,4 @@ def conversation(request):
     conv = data['conversation'].encode().decode('utf-8')
     nums = Conversation.objects.count() + 1
     conversation = Conversation.objects.create(content=conv,num=nums)
-    print(conv)
     return JsonResponse({'conv': conv})
