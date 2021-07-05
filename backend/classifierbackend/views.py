@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 import tensorflow as tf
 import pickle
@@ -7,7 +7,8 @@ import pandas as pd
 import numpy as np
 import regex as re
 import bogo
-from .models import Conversation
+from .models import Conversation, Product, ImageProduct
+
 
 #Load model
 model = tf.keras.models.load_model('./bestmodel')
@@ -176,3 +177,10 @@ def conversation(request):
     nums = Conversation.objects.count() + 1
     conversation = Conversation.objects.create(content=conv,num=nums)
     return JsonResponse({'conv': conv})
+
+def getProductInfor(request):
+    productname = json.loads(request.body)['name'].encode().decode('utf-8')
+    product = get_object_or_404(Product, product_name=productname)
+    lst = ImageProduct.objects.filter(product_id=product.id)
+    url_lst = [i.image.url for i in lst]
+    return JsonResponse({'url': url_lst})

@@ -17,9 +17,13 @@ from django.contrib import admin
 from django.urls import path
 from classifierbackend import views
 from django.views.decorators.csrf import csrf_exempt
+from django.conf.urls.static import static
+from django.conf import settings
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('predictJson',csrf_exempt(views.predictJson), name = "Chatbot Application"),
     path('conversation',csrf_exempt(views.conversation), name = "conversation"),
-]
+    path('getProductInfor',csrf_exempt(views.getProductInfor), name = "Product Infor")
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

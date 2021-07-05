@@ -488,7 +488,7 @@ class ChatBot extends Component {
       if(uploading){
         step = {
           message: url,
-          value: inputValue,
+          value: url,
           uploading: uploading
         };
       }

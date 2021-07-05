@@ -3,12 +3,14 @@ import React, { Component } from 'react';
 import ChatBot from './components';
 import { ThemeProvider } from 'styled-components';
 
+
 class App extends Component {
   constructor(props){
     super(props);
     this.state = {
       prediction: '',
-      conversation:[]
+      conversation:[],
+      url: ''
     };
     this.theme = {
       background: '#f5f8fb',
@@ -51,6 +53,33 @@ class App extends Component {
       this.setState({conversation:[]})
     });
   }
+  async getInfor(name){
+    const url = "http://localhost:8000/getProductInfor";
+    const bodyData = JSON.stringify({
+      "name" : name
+    });
+    const reqOpt = {method:"POST",headers:{"Content-type":"application/json"},body:bodyData};
+    await fetch(url,reqOpt)
+    .then((resp)=>resp.json())
+    .then((respJ)=> {
+      this.setState({
+        url:respJ.url}, ()=> { 
+        console.log(this.state.url)
+    });
+    });
+  };
+  getDataUrl(img) {
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    // Set width and height
+    canvas.width = img.width;
+    canvas.height = img.height;
+    // Draw the image
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL('image/jpeg');
+ }
+
   render(){
     return (
       <div className="App">
@@ -83,11 +112,25 @@ class App extends Component {
                     this.setState({conversation:newcon})
                     return 'user'
                   }
+                  if(value.value === "Đầm caro"){
+                    newcon.push('User: Đầm caro')
+                    this.setState({conversation:newcon})
+                    this.getInfor(value.value)
+                    return 'img'
+                  }
                   newcon.push('User: '+ value.value)
                   this.setState({conversation:newcon})
                   this.predict(value.value)
                   return 'bot'
                 }
+              },
+              {
+                id: 'img',
+                message: ()=>{
+                 const {url} = this.state;
+                 return  "http://localhost:8000" + url[0]
+                },
+                trigger: 'user'
               },
               {
                 id: 'bot',

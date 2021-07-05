@@ -33,7 +33,6 @@ class TextStep extends Component {
     const { previousValue, step } = this.props;
     var { message, uploading } = step;
     if(uploading){
-      
       message = message[0]
     }
     return message ? message.replace(/{previousValue}/g, previousValue) : '';
@@ -93,7 +92,7 @@ class TextStep extends Component {
           isFirst={isFirst}
           isLast={isLast}
         >
-          {loading ? <Loading /> : (uploading?(<img src={this.renderMessage()} width="100%" height="100%" alt="uploaded" />):this.renderMessage())}
+          {loading ? <Loading /> : ((this.renderMessage().split("/").length>5)?(<img src={this.renderMessage()} width="100%" height="100%" alt="uploaded"/>):(uploading?((<img src={this.renderMessage()} width="100%" height="100%" alt="uploaded" />)):this.renderMessage()))}
         </Bubble>}
       </TextStepContainer>
     );
