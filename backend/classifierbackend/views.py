@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import regex as re
 import bogo
+from unidecode import unidecode
 from .models import Conversation, Product, ImageProduct
 
 
@@ -14,6 +15,10 @@ from .models import Conversation, Product, ImageProduct
 model = tf.keras.models.load_model('./bestmodel')
 token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
 label = pickle.load(open('./bestmodel/saved_label.pickle','rb'))
+
+modelRequest = tf.keras.models.load_model('./entitymodel')
+tokenRequest = pickle.load(open('./entitymodel/saved_tokenizer.pickle','rb'))
+labelRequest = pickle.load(open('./entitymodel/saved_label.pickle','rb'))
 
 bang_nguyen_am = [['a', 'à', 'á', 'ả', 'ã', 'ạ', 'a'],
                   ['ă', 'ằ', 'ắ', 'ẳ', 'ẵ', 'ặ', 'aw'],
@@ -167,9 +172,31 @@ def predictJson(request):
     text = data['text'].encode().decode('utf-8')
     text = text_preprocess(text)
     pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
+    preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
     lb = label[np.argmax(pre)]
-
-    return JsonResponse({'label': lb})
+    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[1]
+    url_lst = []
+    size = ""
+    material = ""
+    amount = 0
+    color = ""
+    name = ""
+    typeRequest = lbRe
+    if lb == "Request":
+        for pro in Product.objects.all():
+            if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
+                url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
+                size = pro.size
+                material = pro.material
+                amount = pro.amount
+                color = pro.color
+                name = pro.product_name
+            elif "size" in unidecode(text):
+                typeRequest = "size"
+            elif "phi ship" in unidecode(text) or "gia ship" in unidecode(text):
+                typeRequest = "shippingfee"
+    return JsonResponse({'label': lb,
+                    'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)
@@ -183,4 +210,8 @@ def getProductInfor(request):
     product = get_object_or_404(Product, product_name=productname)
     lst = ImageProduct.objects.filter(product_id=product.id)
     url_lst = [i.image.url for i in lst]
-    return JsonResponse({'url': url_lst})
+    size = product.size
+    material = product.material
+    amount = product.amount
+    color = product.color
+    return JsonResponse({'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size})

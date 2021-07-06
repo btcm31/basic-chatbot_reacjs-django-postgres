@@ -3,14 +3,13 @@ import React, { Component } from 'react';
 import ChatBot from './components';
 import { ThemeProvider } from 'styled-components';
 
-
 class App extends Component {
   constructor(props){
     super(props);
     this.state = {
       prediction: '',
       conversation:[],
-      url: ''
+      product: {'name':"",'url': "", 'color':"", 'amount': "",'material':"",'size':"",'typeR': ""}
     };
     this.theme = {
       background: '#f5f8fb',
@@ -34,7 +33,18 @@ class App extends Component {
     await fetch(url,reqOpt)
     .then((resp)=>resp.json())
     .then((respJ)=> {
-      this.setState({prediction:respJ.label})
+      this.setState({prediction:respJ.label},()=>{
+        if(this.state.prediction==="Request"){
+          if(respJ.infor.name !== ""){
+            this.setState({product:respJ.infor})
+          }
+          else{
+            const m = respJ.infor.typeR;
+            this.state.product.typeR = m;
+          }
+        }
+      })
+
     });
   };
   async conversationUpdate(conv){
@@ -53,21 +63,6 @@ class App extends Component {
       this.setState({conversation:[]})
     });
   }
-  async getInfor(name){
-    const url = "http://localhost:8000/getProductInfor";
-    const bodyData = JSON.stringify({
-      "name" : name
-    });
-    const reqOpt = {method:"POST",headers:{"Content-type":"application/json"},body:bodyData};
-    await fetch(url,reqOpt)
-    .then((resp)=>resp.json())
-    .then((respJ)=> {
-      this.setState({
-        url:respJ.url}, ()=> { 
-        console.log(this.state.url)
-    });
-    });
-  };
   getDataUrl(img) {
     // Create canvas
     const canvas = document.createElement('canvas');
@@ -106,31 +101,17 @@ class App extends Component {
                 user: true,
                 trigger: (value)=>{
                   const {conversation} = this.state;
-                  var newcon = conversation;
+                  var newcon = conversation;  
                   if(!value.value){
                     newcon.push('User: ImageURL')
                     this.setState({conversation:newcon})
                     return 'user'
-                  }
-                  if(value.value === "Đầm caro"){
-                    newcon.push('User: Đầm caro')
-                    this.setState({conversation:newcon})
-                    this.getInfor(value.value)
-                    return 'img'
                   }
                   newcon.push('User: '+ value.value)
                   this.setState({conversation:newcon})
                   this.predict(value.value)
                   return 'bot'
                 }
-              },
-              {
-                id: 'img',
-                message: ()=>{
-                 const {url} = this.state;
-                 return  "http://localhost:8000" + url[0]
-                },
-                trigger: 'user'
               },
               {
                 id: 'bot',
@@ -188,9 +169,89 @@ class App extends Component {
                 message:() => {
                   const {conversation} = this.state;
                   var newcon = conversation;
-                  newcon.push('Bot: Để mình check thử nha')
-                  this.setState({conversation:newcon})
-                  return 'Để mình check thử nha'
+                  console.log(this.state.product.typeR)
+                  if(this.state.product.typeR === "amount_product"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push('Bot: '+this.state.product.name + " còn " + String(this.state.product.amount)+ " cái nha.")
+                    this.setState({conversation:newcon})
+                    return this.state.product.name + " còn " + String(this.state.product.amount)+ " cái nha."
+                  }
+                  else if(this.state.product.typeR === "size"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push('Bot: '+this.state.product.name + " còn size " + this.state.product.size+ " nha.")
+                    this.setState({conversation:newcon})
+                    return this.state.product.name + " còn size " + this.state.product.size+ " nha."
+                  }
+                  else if(this.state.product.typeR === "material_product"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push("Bot: "+ "Chất liệu " +this.state.product.name + " là " + this.state.product.material+ " á.")
+                    this.setState({conversation:newcon})
+                    return "Chất liệu " +this.state.product.name + " là " + this.state.product.material+ " nha."
+                  }
+                  else if(this.state.product.typeR === "shippingfee"){
+                    newcon.push("Bot: Phí ship nội thành là 30k còn ngoại thành là 50k nha.")
+                    this.setState({conversation:newcon})
+                    return "Phí ship nội thành là 30k còn ngoại thành là 50k nha."
+                  }
+                  else if(this.state.product.typeR === "product_image"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push("Bot: ImageURL")
+                    this.setState({conversation:newcon})
+                    return "http://localhost:8000" + this.state.product.url[0]
+                  }
+                  else if(this.state.product.typeR === "color_product"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push("Bot: "+this.state.product.name + " còn màu " + String(this.state.product.color)+ " nha.")
+                    this.setState({conversation:newcon})
+                    return this.state.product.name + " còn màu " + this.state.product.color+ " nha."
+                  }
+                  else if(this.state.product.typeR === "cost_product"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    newcon.push("Bot: " + this.state.product.name + " có giá là " + "123k"+ " nha.")
+                    this.setState({conversation:newcon})
+                    return this.state.product.name + " có giá là " + " 123k "+ " nha."
+                  }
+                  else if(this.state.product.typeR === "ID_product"){
+                    if(this.state.product.name===""){
+                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
+                      this.setState({conversation:newcon})
+                      return "Bạn muốn hỏi sản phẩm nào á?"
+                    }
+                    const tx = this.state.product.name + " còn " + String(this.state.product.amount)+ " cái. Chất liệu " + this.state.product.material +" nha. Bạn cho mình số đo mình tư vấn thêm nha."
+                    newcon.push("Bot: "+tx)
+                    this.setState({conversation:newcon})
+                    return tx
+                  }
+                  else {
+                    console.log(this.state.product.typeR)
+                    newcon.push('Bot: Để mình check thử nha')
+                    this.setState({conversation:newcon})
+                    return 'Để mình check thử nha'
+                  }
                 },
                 trigger: 'user',
               },
@@ -224,6 +285,7 @@ class App extends Component {
                   newcon.push('Bot: Dạ cảm ơn bạn nhiều')
                   this.setState({conversation:newcon})
                   this.conversationUpdate(newcon)
+                  this.setState({product: {'name':"",'url': "", 'color':"", 'amount': "",'material':"",'size':"",'typeR': ""}})
                   return 'Dạ cảm ơn bạn nhiều'
                 },
                 trigger: 'user',
@@ -277,9 +339,9 @@ class App extends Component {
                 message:()=> {
                   const {conversation} = this.state;
                   var newcon = conversation;
-                  newcon.push('Bot: Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.')
+                  newcon.push('Bot: Bạn cho mình địa chỉ với sđt để mình chốt đơn cho bạn nha.')
                   this.setState({conversation:newcon})
-                  return 'Cảm ơn bạn đã ủng hộ shop nha. Để mình chốt đơn cho bạn lun.'
+                  return 'Bạn cho mình địa chỉ với sđt để mình chốt đơn cho bạn nha.'
                 },
                 trigger: 'user',
               },

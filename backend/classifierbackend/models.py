@@ -1,5 +1,4 @@
 from django.db import models
-from django.template.defaultfilters import slugify
 
 class Conversation(models.Model):
     content = models.TextField()
@@ -9,6 +8,10 @@ class Conversation(models.Model):
 
 class Product(models.Model):
     product_name = models.CharField(max_length = 255)
+    material = models.CharField(max_length = 255)
+    size = models.CharField(max_length = 255)
+    amount = models.IntegerField()
+    color = models.CharField(max_length = 255)
 
     def __str__(self):
         return self.product_name
