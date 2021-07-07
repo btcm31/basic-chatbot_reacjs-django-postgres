@@ -25,5 +25,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('predictJson',csrf_exempt(views.predictJson), name = "Chatbot Application"),
     path('conversation',csrf_exempt(views.conversation), name = "conversation"),
-    path('getProductInfor',csrf_exempt(views.getProductInfor), name = "Product Infor")
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

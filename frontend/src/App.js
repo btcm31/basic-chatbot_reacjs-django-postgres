@@ -34,14 +34,12 @@ class App extends Component {
     .then((resp)=>resp.json())
     .then((respJ)=> {
       this.setState({prediction:respJ.label},()=>{
-        if(this.state.prediction==="Request"){
-          if(respJ.infor.name !== ""){
-            this.setState({product:respJ.infor})
-          }
-          else{
-            const m = respJ.infor.typeR;
-            this.state.product.typeR = m;
-          }
+        if(respJ.infor.name !== ""){
+          this.setState({product:respJ.infor})
+        }
+        else{
+          const m = respJ.infor.typeR;
+          this.state.product.typeR = m;
         }
       })
 
@@ -170,35 +168,33 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;
                   console.log(this.state.product.typeR)
+                  var m = "";
                   if(this.state.product.typeR === "amount_product"){
+                    m = this.state.product.name + " còn " + String(this.state.product.amount)+ " cái nha.";
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m= "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push('Bot: '+this.state.product.name + " còn " + String(this.state.product.amount)+ " cái nha.")
+                    newcon.push('Bot: ' + m)
                     this.setState({conversation:newcon})
-                    return this.state.product.name + " còn " + String(this.state.product.amount)+ " cái nha."
+                    return m
                   }
                   else if(this.state.product.typeR === "size"){
+                    m = this.state.product.name + " còn size " + this.state.product.size+ " nha.";
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m=  "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push('Bot: '+this.state.product.name + " còn size " + this.state.product.size+ " nha.")
+                    newcon.push('Bot: ' + m)
                     this.setState({conversation:newcon})
-                    return this.state.product.name + " còn size " + this.state.product.size+ " nha."
+                    return m
                   }
                   else if(this.state.product.typeR === "material_product"){
+                    m = "Chất liệu " +this.state.product.name + " là " + this.state.product.material+ " nha.";
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m = "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push("Bot: "+ "Chất liệu " +this.state.product.name + " là " + this.state.product.material+ " á.")
+                    newcon.push("Bot: " + m)
                     this.setState({conversation:newcon})
-                    return "Chất liệu " +this.state.product.name + " là " + this.state.product.material+ " nha."
+                    return m
                   }
                   else if(this.state.product.typeR === "shippingfee"){
                     newcon.push("Bot: Phí ship nội thành là 30k còn ngoại thành là 50k nha.")
@@ -206,48 +202,43 @@ class App extends Component {
                     return "Phí ship nội thành là 30k còn ngoại thành là 50k nha."
                   }
                   else if(this.state.product.typeR === "product_image"){
+                    m ="http://localhost:8000" + this.state.product.url[0];
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m = "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push("Bot: ImageURL")
+                    newcon.push("Bot: " + m)
                     this.setState({conversation:newcon})
-                    return "http://localhost:8000" + this.state.product.url[0]
+                    return m
                   }
                   else if(this.state.product.typeR === "color_product"){
+                    m = this.state.product.name + " còn màu " + this.state.product.color+ " nha."
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m = "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push("Bot: "+this.state.product.name + " còn màu " + String(this.state.product.color)+ " nha.")
+                    newcon.push("Bot: " + m)
                     this.setState({conversation:newcon})
-                    return this.state.product.name + " còn màu " + this.state.product.color+ " nha."
+                    return m
                   }
                   else if(this.state.product.typeR === "cost_product"){
+                    m = this.state.product.name + " có giá là 123k nha.";
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m = "Bạn muốn hỏi sản phẩm nào á?"
                     }
-                    newcon.push("Bot: " + this.state.product.name + " có giá là " + "123k"+ " nha.")
+                    newcon.push("Bot: " + m)
                     this.setState({conversation:newcon})
-                    return this.state.product.name + " có giá là " + " 123k "+ " nha."
+                    return m
                   }
                   else if(this.state.product.typeR === "ID_product"){
+                    m = this.state.product.name + " còn " + String(this.state.product.amount)+ " cái. Chất liệu " + this.state.product.material +" nha. Bạn cho mình số đo mình tư vấn thêm nha."
                     if(this.state.product.name===""){
-                      newcon.push('Bot: Bạn muốn hỏi sản phẩm nào á?')
-                      this.setState({conversation:newcon})
-                      return "Bạn muốn hỏi sản phẩm nào á?"
+                      m = "Bên mình hông có sản phẩm đó nha"
                     }
-                    const tx = this.state.product.name + " còn " + String(this.state.product.amount)+ " cái. Chất liệu " + this.state.product.material +" nha. Bạn cho mình số đo mình tư vấn thêm nha."
-                    newcon.push("Bot: "+tx)
+                    
+                    newcon.push("Bot: " + m)
                     this.setState({conversation:newcon})
-                    return tx
+                    return m
                   }
                   else {
-                    console.log(this.state.product.typeR)
                     newcon.push('Bot: Để mình check thử nha')
                     this.setState({conversation:newcon})
                     return 'Để mình check thử nha'

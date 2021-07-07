@@ -195,6 +195,8 @@ def predictJson(request):
                 typeRequest = "size"
             elif "phi ship" in unidecode(text) or "gia ship" in unidecode(text):
                 typeRequest = "shippingfee"
+            elif "hinh" in unidecode(text) or "anh that" in unidecode(text):
+                typeRequest = "product_image"
     return JsonResponse({'label': lb,
                     'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
 #python manage.py migrate --run-syncdb
@@ -204,14 +206,3 @@ def conversation(request):
     nums = Conversation.objects.count() + 1
     conversation = Conversation.objects.create(content=conv,num=nums)
     return JsonResponse({'conv': conv})
-
-def getProductInfor(request):
-    productname = json.loads(request.body)['name'].encode().decode('utf-8')
-    product = get_object_or_404(Product, product_name=productname)
-    lst = ImageProduct.objects.filter(product_id=product.id)
-    url_lst = [i.image.url for i in lst]
-    size = product.size
-    material = product.material
-    amount = product.amount
-    color = product.color
-    return JsonResponse({'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size})
