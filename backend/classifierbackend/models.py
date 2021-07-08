@@ -22,6 +22,6 @@ def get_image_filename(instance, filename):
 
 class ImageProduct(models.Model):
     product = models.ForeignKey(Product,on_delete=models.DO_NOTHING,)
-    image = models.FileField(upload_to=get_image_filename)
+    image = models.ImageField(upload_to=get_image_filename)
     def __str__(self):
         return self.product.product_name

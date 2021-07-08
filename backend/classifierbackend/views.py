@@ -174,7 +174,7 @@ def predictJson(request):
     pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
     preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
     lb = label[np.argmax(pre)]
-    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[1]
+    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
     url_lst = []
     size = ""
     material = ""
