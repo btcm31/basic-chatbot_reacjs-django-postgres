@@ -1,0 +1,26 @@
+{
+    "Hello": "Hello, mình là chatbot nè!",
+    "Connect" : "Chào bạn, bạn cần tư vấn gì á",
+    "Feedback" : "Dạ cảm ơn về phản hồi của bạn ạ!",
+    "Return" : "Bạn được trả sản phẩm với điều kiện sản phẩm còn nguyên tem, mạc và hóa đơn mua hàng nha.",
+    "Done" : "Dạ cảm ơn bạn nhiều",
+    "OK" : "Oki bạn nha.",
+    "Changing" : "Bạn được đổi sản phẩm với điều kiện sản phẩm còn nguyên tem, mạc và hóa đơn mua hàng nha.",
+    "Order" : "Bạn cho mình xin họ tên, địa chỉ với sđt để mình chốt đơn cho bạn nha.",
+    "Inform" : "Ok để mình lưu thông tin của bạn luôn.",
+    "Request" : {
+        "not_found_product" : "Xin lỗi bạn, bên mình hông có sản phẩm đó nha",
+        "amount_product" :"",
+        "size" : "",
+        "material_product": "",
+        "cost_product": "",
+        "product_image": "",
+        "ID_product": "",
+        "color_product": "",
+        "not_ID_product": "Bạn muốn hỏi sản phẩm nào á??",
+        "shipping fee" : "'Phí ship nội thành là 30k còn ngoại thành là 50k nha.'",
+        "Time" : "'Nội thành TP.HCM thì 1-2 ngày còn ngoại thành thì 3-4 ngày có hàng nha bạn.'",
+        "address": "'Shop ở 48/15 Phạm Văn Xảo, P.Phú Thọ Hòa, Quận Tân Phú ạ'"
+    },
+    "Other": "Shop chưa hiểu câu hỏi của bạn :("
+}
