@@ -9,6 +9,9 @@ import regex as re
 import bogo
 from unidecode import unidecode
 from .models import Conversation, Product, ImageProduct
+from PIL import Image, ImageChops
+from io import BytesIO
+import base64
 
 
 #Load model
@@ -191,14 +194,50 @@ def predictJson(request):
                 amount = pro.amount
                 color = pro.color
                 name = pro.product_name
-            elif "size" in unidecode(text):
-                typeRequest = "size"
-            elif "phi ship" in unidecode(text) or "gia ship" in unidecode(text):
-                typeRequest = "shippingfee"
-            elif "hinh" in unidecode(text) or "anh that" in unidecode(text):
-                typeRequest = "product_image"
     return JsonResponse({'label': lb,
                     'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
+def imgPredict(request):
+    data = json.loads(request.body)
+    typeRequest = "Request"
+    url_lst = []
+    size = ""
+    material = ""
+    amount = 0
+    color = ""
+    name = ""
+    if data['img'] != "":
+        exist = False
+        for img in ImageProduct.objects.all():
+            image_data = base64.b64decode(re.sub('^data:image/.+;base64,', '', data['img']))
+            imginput = Image.open(BytesIO(image_data))
+            try:
+                imgdb = Image.open(img.image)
+            except:
+                continue
+            diff = ImageChops.difference(imginput, imgdb)
+            if not diff.getbbox():#check_image(imginput, imgdb):
+                url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
+                name = img.product.product_name
+                size = img.product.size
+                material = img.product.material
+                amount = img.product.amount
+                color = img.product.color
+                exist = True
+                break
+        if not exist:
+            typeRequest = "no-find-img"
+    return JsonResponse({'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
+def check_image(imginput, imgdb):
+    if imginput.size != imgdb.size:
+        return False
+    rows, cols = imginput.size
+    for row in range(rows):
+        for col in range(cols):
+            input_pixel = imginput.getpixel((row,col))
+            imgdb_pixel = imgdb.getpixel((row,col))
+            if input_pixel != imgdb_pixel:
+                return False
+    return True
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)

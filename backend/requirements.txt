@@ -8,3 +8,4 @@ bogo
 regex
 pandas
 unidecode
+PIL
