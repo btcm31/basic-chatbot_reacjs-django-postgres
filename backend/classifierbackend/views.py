@@ -18,9 +18,9 @@ model = tf.keras.models.load_model('./bestmodel')
 token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
 label = pickle.load(open('./bestmodel/saved_label.pickle','rb'))
 
-modelRequest = tf.keras.models.load_model('./entitymodel')
-tokenRequest = pickle.load(open('./entitymodel/saved_tokenizer.pickle','rb'))
-labelRequest = pickle.load(open('./entitymodel/saved_label.pickle','rb'))
+modelRequest = tf.keras.models.load_model('./requestmodel')
+tokenRequest = pickle.load(open('./requestmodel/saved_tokenizer.pickle','rb'))
+labelRequest = pickle.load(open('./requestmodel/saved_label.pickle','rb'))
 
 bang_nguyen_am = [['a', 'à', 'á', 'ả', 'ã', 'ạ', 'a'],
                   ['ă', 'ằ', 'ắ', 'ẳ', 'ẵ', 'ặ', 'aw'],

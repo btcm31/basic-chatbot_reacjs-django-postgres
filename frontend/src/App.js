@@ -39,9 +39,8 @@ class App extends Component {
         if(respJ.infor.name !== ''){
           this.setState({product:respJ.infor})
         }
-        else if(this.state.product !== "no-find-img"){
-          const m = respJ.infor.typeR;
-          this.state.product.typeR = m;
+        else if(this.state.product.typeR !== "no-find-img"){
+          this.state.product.typeR = respJ.infor.typeR
         }
       })
 
@@ -129,17 +128,13 @@ class App extends Component {
                 id: 'reply',
                 message:(previousValue)=>{
                   var mess = "";
-                  const {conversation, prediction} = this.state;
+                  const {conversation, prediction, product} = this.state;
                   var newcon = conversation;
                   console.log(prediction)
                   if (prediction === 'Inform') {
                     mess = 'Ok để mình lưu thông tin của bạn luôn.'
                   }
-                  else if(this.state.product.typeR === 'no-find-img'){
-                    mess = 'Bên mình hông có sản phẩm như hình nha :('
-                  }
                   else if(prediction === 'Request'){
-                    const {product} = this.state;
                     console.log(product.typeR)
                     if(product.typeR === 'amount_product'){
                       mess = product.name + ' còn ' + String(product.amount) + ' cái nha.'
@@ -150,6 +145,9 @@ class App extends Component {
                       else if (this.state.stateConv!==""){
                         this.setState({stateConv:''})
                       }
+                    }
+                    else if(product.typeR === 'no-find-img'){
+                      mess = 'Bên mình hông có sản phẩm như hình nha :('
                     }
                     else if (product.typeR === 'size'){
                       mess = product.name + ' còn size ' + product.size + ' nha.'
