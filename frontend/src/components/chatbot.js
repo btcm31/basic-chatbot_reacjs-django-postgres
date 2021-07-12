@@ -453,7 +453,7 @@ class ChatBot extends Component {
     this.setState({ url: successImages});
     this.setState({ uploading: true});
     try {
-        console.log('successImages', successImages);
+        //console.log('successImages', successImages);
         const parts = successImages[0].split(';');
         const mime = parts[0].split(':')[1];
         const name = parts[1].split('=')[1];
@@ -481,14 +481,14 @@ class ChatBot extends Component {
     const { defaultUserSettings, inputValue,url, previousSteps, renderedSteps,uploading } = this.state;
     let { currentStep } = this.state;
     const isInvalid = currentStep.validator && this.checkInvalidInput();
-    if(!inputValue &&!uploading&&url[0])
+    if(!inputValue && !uploading && url[0])
       return;
     if (!isInvalid) {
       var step = {};
       if(uploading){
         step = {
           message: url,
-          value: inputValue,
+          value: url,
           uploading: uploading
         };
       }

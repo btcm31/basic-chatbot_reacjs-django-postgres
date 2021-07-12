@@ -1,4 +1,3 @@
-from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 import tensorflow as tf
 import pickle
@@ -35,7 +34,6 @@ bang_nguyen_am = [['a', 'à', 'á', 'ả', 'ã', 'ạ', 'a'],
                   ['u', 'ù', 'ú', 'ủ', 'ũ', 'ụ', 'u'],
                   ['ư', 'ừ', 'ứ', 'ử', 'ữ', 'ự', 'uw'],
                   ['y', 'ỳ', 'ý', 'ỷ', 'ỹ', 'ỵ', 'y']]
-bang_ky_tu_dau = ['', 'f', 's', 'r', 'x', 'j']
 
 nguyen_am_to_ids = {}
 
@@ -215,7 +213,7 @@ def imgPredict(request):
             except:
                 continue
             diff = ImageChops.difference(imginput, imgdb)
-            if not diff.getbbox():#check_image(imginput, imgdb):
+            if not diff.getbbox():
                 url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
                 name = img.product.product_name
                 size = img.product.size
@@ -227,17 +225,6 @@ def imgPredict(request):
         if not exist:
             typeRequest = "no-find-img"
     return JsonResponse({'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
-def check_image(imginput, imgdb):
-    if imginput.size != imgdb.size:
-        return False
-    rows, cols = imginput.size
-    for row in range(rows):
-        for col in range(cols):
-            input_pixel = imginput.getpixel((row,col))
-            imgdb_pixel = imgdb.getpixel((row,col))
-            if input_pixel != imgdb_pixel:
-                return False
-    return True
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)

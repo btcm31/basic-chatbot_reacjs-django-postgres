@@ -39,10 +39,26 @@ class App extends Component {
         if(respJ.infor.name !== ''){
           this.setState({product:respJ.infor})
         }
-        else{
+        else if(this.state.product !== "no-find-img"){
           const m = respJ.infor.typeR;
           this.state.product.typeR = m;
         }
+      })
+
+    });
+  };
+
+  async predictImg(urlin){
+    const url = "http://localhost:8000/imgPredict";
+    const bodyData = JSON.stringify({
+      "img" : urlin
+    });
+    const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
+    await fetch(url,reqOpt)
+    .then((resp)=>resp.json())
+    .then((respJ)=> {
+      this.setState({product:respJ.infor}, ()=>{
+        //
       })
 
     });
@@ -72,7 +88,7 @@ class App extends Component {
         <ThemeProvider theme = {this.theme}>
           <ChatBot
             headerTitle = 'Intent chatbot'
-            botDelay = {1500}
+            botDelay = {1000}
             steps = {[
               {
                 id: 'start',
@@ -91,9 +107,10 @@ class App extends Component {
                 trigger: (value)=>{
                   const {conversation} = this.state;
                   var newcon = conversation;  
-                  if(!value.value){
+                  if(Array.isArray(value.value)){
                     newcon.push('User: ImageURL')
                     this.setState({conversation: newcon})
+                    this.predictImg(value.value[0])
                     return 'user'
                   }
                   newcon.push('User: ' + value.value)
@@ -103,19 +120,23 @@ class App extends Component {
                 }
               },
               {
-                // this step to wait to prediction and product state updated
+                // this step to wait to states updated
                 id: 'bot',
                 message: 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse',
                 trigger: 'reply'
               },
               {
                 id: 'reply',
-                message:()=>{
+                message:(previousValue)=>{
                   var mess = "";
                   const {conversation, prediction} = this.state;
                   var newcon = conversation;
+                  console.log(prediction)
                   if (prediction === 'Inform') {
                     mess = 'Ok để mình lưu thông tin của bạn luôn.'
+                  }
+                  else if(this.state.product.typeR === 'no-find-img'){
+                    mess = 'Bên mình hông có sản phẩm như hình nha :('
                   }
                   else if(prediction === 'Request'){
                     const {product} = this.state;
@@ -124,39 +145,63 @@ class App extends Component {
                       mess = product.name + ' còn ' + String(product.amount) + ' cái nha.'
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'amount_product'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
                     else if (product.typeR === 'size'){
                       mess = product.name + ' còn size ' + product.size + ' nha.'
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'size'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
                     else if (product.typeR === 'material_product'){
                       mess = 'Dạ ' + product.name + ' chất ' + product.material + ' nha.'
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'material_product'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
-                    else if (product.typeR === 'shippingfee'){
+                    else if (product.typeR === 'shiping fee'){
                       mess = 'Phí ship nội thành là 30k còn ngoại thành là 50k nha.'
                     }
                     else if (product.typeR === 'product_image'){
                       mess = 'http://localhost:8000' + product.url[0]
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'product_image'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
                     else if (product.typeR === 'color_product'){
                       mess = product.name + ' còn màu ' + product.color + ' nha.'
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'color_product'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
                     else if (product.typeR === 'cost_product'){
                       mess = product.name + ' có giá 380k giảm còn 195k nha.'
                       if(product.name === ''){
                         mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        this.setState({stateConv:'cost_product'})
+                      }
+                      else if (this.state.stateConv!==""){
+                        this.setState({stateConv:''})
                       }
                     }
                     else if (product.typeR === 'ID_product'){
@@ -196,7 +241,8 @@ class App extends Component {
                   else if (prediction === 'Done'){
                     mess = 'Dạ cảm ơn bạn nhiều'
                     this.setState({product: {'name': '', 'url': '', 'color':'', 'amount': '', 'material': '', 'size': '', 'typeR': ''}})
-                    this.conversationUpdate(newcon.push('Bot: ' + mess))
+                    newcon.push('Bot: ' + mess)
+                    this.conversationUpdate(newcon)
                   }
                   else if(prediction === 'OK'){
                     mess = 'Ok bạn.'
