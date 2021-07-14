@@ -12,15 +12,19 @@ from PIL import Image, ImageChops
 from io import BytesIO
 import base64
 
-
 #Load model
 model = tf.keras.models.load_model('./bestmodel')
 token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
 label = pickle.load(open('./bestmodel/saved_label.pickle','rb'))
-
+#Request model 
 modelRequest = tf.keras.models.load_model('./requestmodel')
 tokenRequest = pickle.load(open('./requestmodel/saved_tokenizer.pickle','rb'))
 labelRequest = pickle.load(open('./requestmodel/saved_label.pickle','rb'))
+#Inform model
+modelInform = tf.keras.models.load_model('./informmodel')
+tokenInform = pickle.load(open('./informmodel/saved_tokenizer.pickle','rb'))
+labelInform = pickle.load(open('./informmodel/saved_label.pickle','rb'))
+
 
 bang_nguyen_am = [['a', 'à', 'á', 'ả', 'ã', 'ạ', 'a'],
                   ['ă', 'ằ', 'ắ', 'ẳ', 'ẵ', 'ặ', 'aw'],
@@ -123,9 +127,6 @@ def chuan_hoa_dau_cau_tieng_viet(sentence):
         words[index] = ''.join(cw)
     return ' '.join(words)
 
-uniChars = "àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệđìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵÀÁẢÃẠÂẦẤẨẪẬĂẰẮẲẴẶÈÉẺẼẸÊỀẾỂỄỆĐÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴÂĂĐÔƠƯ"
-unsignChars = "aaaaaaaaaaaaaaaaaeeeeeeeeeeediiiiiooooooooooooooooouuuuuuuuuuuyyyyyAAAAAAAAAAAAAAAAAEEEEEEEEEEEDIIIOOOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYAADOOU"
- 
 def loaddicchar():
     dic = {}
     char1252 = 'à|á|ả|ã|ạ|ầ|ấ|ẩ|ẫ|ậ|ằ|ắ|ẳ|ẵ|ặ|è|é|ẻ|ẽ|ẹ|ề|ế|ể|ễ|ệ|ì|í|ỉ|ĩ|ị|ò|ó|ỏ|õ|ọ|ồ|ố|ổ|ỗ|ộ|ờ|ớ|ở|ỡ|ợ|ù|ú|ủ|ũ|ụ|ừ|ứ|ử|ữ|ự|ỳ|ý|ỷ|ỹ|ỵ|À|Á|Ả|Ã|Ạ|Ầ|Ấ|Ẩ|Ẫ|Ậ|Ằ|Ắ|Ẳ|Ẵ|Ặ|È|É|Ẻ|Ẽ|Ẹ|Ề|Ế|Ể|Ễ|Ệ|Ì|Í|Ỉ|Ĩ|Ị|Ò|Ó|Ỏ|Õ|Ọ|Ồ|Ố|Ổ|Ỗ|Ộ|Ờ|Ớ|Ở|Ỡ|Ợ|Ù|Ú|Ủ|Ũ|Ụ|Ừ|Ứ|Ử|Ữ|Ự|Ỳ|Ý|Ỷ|Ỹ|Ỵ'.split(
@@ -167,23 +168,25 @@ def text_preprocess(document):
     # remove multiple space character
     document = re.sub(r'\s+', ' ', document).strip()
     return document
-
 def predictJson(request):
     data = json.loads(request.body)
     text = data['text'].encode().decode('utf-8')
     text = text_preprocess(text)
     pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
-    preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
     lb = label[np.argmax(pre)]
-    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
+
     url_lst = []
     size = ""
     material = ""
     amount = 0
     color = ""
     name = ""
-    typeRequest = lbRe
+    typeRequest = ""
     if lb == "Request":
+        preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
+        lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
+        typeRequest = lbRe
+
         for pro in Product.objects.all():
             if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
                 url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
@@ -192,6 +195,27 @@ def predictJson(request):
                 amount = pro.amount
                 color = pro.color
                 name = pro.product_name
+    elif lb =="Inform":
+        typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
+        lstlb = labelInform[np.argmax(typeInform)].split(",")
+        lbInform = lstlb[-1] if len(lstlb) == 2 else ",".join(lstlb[1:])
+
+        weight = ""
+        height = ""
+        v2 = ""
+        lst = []
+        if lbInform == "size":
+            size = [i for i in text.split() if len(i)==1][-1]
+        if lbInform == "V2":
+            v2 = int(re.findall(r'\d+',text)[0])
+        if re.search('height',lbInform):
+            height = int(re.sub(r'.*m','1',re.findall(r'\d*m\d+',text)[0]))
+            if height < 100:
+                height *= 10
+        if re.search('weight',lbInform):
+            weight = int(re.findall('\d+',re.sub(r'\d*m\d+','',text))[0])
+        return JsonResponse({'label':lb,
+                            'infor': {'size':size,'weight':weight,'height':height,'V2':v2,'typeI':lbInform.split()[0]}})
     return JsonResponse({'label': lb,
                     'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
 def imgPredict(request):

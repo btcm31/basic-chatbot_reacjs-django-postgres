@@ -2,6 +2,7 @@ import './App.css';
 import React, { Component } from 'react';
 import ChatBot from './components';
 import { ThemeProvider } from 'styled-components';
+import * as reply from './reply.json' ;
 
 class App extends Component {
   constructor(props){
@@ -10,7 +11,19 @@ class App extends Component {
       prediction: '',
       conversation: [],
       product: {'name': '', 'url': '', 'color': '', 'amount': '', 'material': '', 'size': '', 'typeR': ''},
-      stateConv: ''
+      stateConv: 'start', //[start, inforproduct, sizeadvisory, order]
+      customerinfor:{
+        'name': '',
+        'addr' :'',
+        'amount': '',
+        'ID_product': '',
+        'phone': '',
+        'size':'',
+        'weight':'',
+        'height':'',
+        'V2':'',
+        'typeI':''
+      }
     };
     this.theme = {
       background: '#f5f8fb',
@@ -36,11 +49,32 @@ class App extends Component {
     .then((resp)=>resp.json())
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
-        if(respJ.infor.name !== ''){
+        if(respJ.label === 'Request'){
+          if(respJ.infor.name !== ''){
           this.setState({product:respJ.infor})
+          }
+          else if(this.state.product.typeR !== "no-find-img"){
+            this.state.product.typeR = respJ.infor.typeR
+          }
         }
-        else if(this.state.product.typeR !== "no-find-img"){
-          this.state.product.typeR = respJ.infor.typeR
+        else if (respJ.label === 'Inform'){
+          const {customerinfor} = this.state
+          let temp = {
+            'name': customerinfor.name,
+            'addr' :customerinfor.addr,
+            'amount': customerinfor.amount,
+            'ID_product': customerinfor.ID_product,
+            'phone': customerinfor.phone,
+            'size':customerinfor.size,
+            'weight':customerinfor.weight,
+            'height':customerinfor.height,
+            'V2':customerinfor.V2,
+            'typeI':customerinfor.typeI
+          }
+          let idx = respJ.infor.typeI
+          temp[idx] = respJ.infor[respJ.infor.typeI]
+          temp.typeI = respJ.infor.typeI
+          this.setState({customerinfor:temp})
         }
       })
 
@@ -96,6 +130,7 @@ class App extends Component {
                   var newcon = conversation;
                   newcon.push('Bot: Welcome!')
                   this.setState({conversation:newcon})
+                  this.predict('')
                   return 'Hello, mình là chatbot nè!'
                 },
                 trigger: 'user',
@@ -128,18 +163,43 @@ class App extends Component {
                 id: 'reply',
                 message:(previousValue)=>{
                   var mess = "";
-                  const {conversation, prediction, product} = this.state;
+                  const {conversation, prediction, product,customerinfor} = this.state;
                   var newcon = conversation;
                   console.log(prediction)
                   if (prediction === 'Inform') {
-                    mess = 'Ok để mình lưu thông tin của bạn luôn.'
+                    mess = reply.Inform
+                    console.log(customerinfor)
+                    if(customerinfor.typeI === 'size'){
+                      mess = 'Vậy bạn lấy size ' + (customerinfor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
+                      if(!['m','l','s'].includes(customerinfor.size)){
+                        mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                      }
+                    }
+                    else if(customerinfor.typeI === 'height'){
+                      if(customerinfor.weight === ''){
+                        mess = 'Bạn cho mình xin cân nặng nha'
+                      }
+                    }
+                    else if(customerinfor.typeI === 'weight'){
+                      if(customerinfor.V2 === ''){
+                        mess = 'Bạn có số đo eo hông ạ?'
+                      }
+                    }
+                    else if (customerinfor.typeI === 'V2'){
+                      if(customerinfor.weight === ''){
+                        mess = 'Bạn cho mình xin cân nặng nha'
+                      }
+                    }
+                    if(customerinfor.weight > 70){
+                      mess = "Bạn mặc size L là đẹp xỉu luôn nha."
+                    }
                   }
                   else if(prediction === 'Request'){
                     console.log(product.typeR)
                     if(product.typeR === 'amount_product'){
                       mess = product.name + ' còn ' + String(product.amount) + ' cái nha.'
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'amount_product'})
                       }
                       else if (this.state.stateConv!==""){
@@ -147,12 +207,12 @@ class App extends Component {
                       }
                     }
                     else if(product.typeR === 'no-find-img'){
-                      mess = 'Bên mình hông có sản phẩm như hình nha :('
+                      mess = reply.Request['no-find-img']
                     }
                     else if (product.typeR === 'size'){
                       mess = product.name + ' còn size ' + product.size + ' nha.'
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'size'})
                       }
                       else if (this.state.stateConv!==""){
@@ -162,7 +222,7 @@ class App extends Component {
                     else if (product.typeR === 'material_product'){
                       mess = 'Dạ ' + product.name + ' chất ' + product.material + ' nha.'
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'material_product'})
                       }
                       else if (this.state.stateConv!==""){
@@ -170,12 +230,12 @@ class App extends Component {
                       }
                     }
                     else if (product.typeR === 'shiping fee'){
-                      mess = 'Phí ship nội thành là 30k còn ngoại thành là 50k nha.'
+                      mess = reply.Request['shipping fee']
                     }
                     else if (product.typeR === 'product_image'){
                       mess = 'http://localhost:8000' + product.url[0]
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'product_image'})
                       }
                       else if (this.state.stateConv!==""){
@@ -185,7 +245,7 @@ class App extends Component {
                     else if (product.typeR === 'color_product'){
                       mess = product.name + ' còn màu ' + product.color + ' nha.'
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'color_product'})
                       }
                       else if (this.state.stateConv!==""){
@@ -195,7 +255,7 @@ class App extends Component {
                     else if (product.typeR === 'cost_product'){
                       mess = product.name + ' có giá 380k giảm còn 195k nha.'
                       if(product.name === ''){
-                        mess = 'Bạn muốn hỏi sản phẩm nào á?'
+                        mess = reply.Request.not_ID_product
                         this.setState({stateConv:'cost_product'})
                       }
                       else if (this.state.stateConv!==""){
@@ -205,48 +265,48 @@ class App extends Component {
                     else if (product.typeR === 'ID_product'){
                       mess = product.name + ' còn ' + String(product.amount) + ' cái. Chất liệu ' + product.material + ' nha. Bạn cho mình số đo mình tư vấn thêm nha.'
                       if(product.name === ''){
-                        mess = 'Bên mình hông có sản phẩm đó nha'
+                        mess = reply.Request.not_found_product
                       }
                     }
                     else if (product.typeR === 'Time'){
-                      mess = 'Nội thành TP.HCM thì 1-2 ngày còn ngoại thành thì 3-4 ngày có hàng nha bạn.'
+                      mess = reply.Request.Time
                     }
                     else if (product.typeR === 'address'){
-                      mess = 'Shop ở 48/15 Phạm Văn Xảo, P.Phú Thọ Hòa, Quận Tân Phú ạ'
+                      mess = reply.Request.address
                     }
                     else {
                       mess = 'Để mình check thử nha'
                     }
                   }
                   else if (prediction === 'Order'){
-                    mess = 'Bạn cho mình địa chỉ với sđt để mình chốt đơn cho bạn nha.'
+                    mess = reply.Order
                   }
                   else if (prediction === 'Changing'){
-                    mess = 'Bạn được đổi sản phẩm với điều kiện sản phẩm còn nguyên tem, mạc và hóa đơn mua hàng nha.'
+                    mess = reply.Changing
                   }
                   else if (prediction === 'Return'){
-                    mess = 'Bạn được trả sản phẩm với điều kiện sản phẩm còn nguyên tem, mạc và hóa đơn mua hàng nha.'
+                    mess = reply.Return
                   }
                   else if (prediction === 'feedback'){
-                    mess = 'Dạ cảm ơn về phản hồi của bạn ạ!'
+                    mess = reply.Feedback
                   }
                   else if (prediction === 'Hello'){
-                    mess = 'Hello bạn, bạn cần tư vấn gì á'
+                    mess = reply.Hello
                   }
                   else if (prediction === 'Connect'){
-                    mess = 'Chào bạn, bạn cần tư vấn gì á'
+                    mess = reply.Connect
                   }
                   else if (prediction === 'Done'){
-                    mess = 'Dạ cảm ơn bạn nhiều'
+                    mess = reply.Done
                     this.setState({product: {'name': '', 'url': '', 'color':'', 'amount': '', 'material': '', 'size': '', 'typeR': ''}})
                     newcon.push('Bot: ' + mess)
                     this.conversationUpdate(newcon)
                   }
                   else if(prediction === 'OK'){
-                    mess = 'Ok bạn.'
+                    mess = reply.OK
                   }
                   else{
-                    mess = 'Shop chưa hiểu câu hỏi của bạn :('
+                    mess = reply.Other
                   }
                   newcon.push('Bot: ' + mess)
                   this.setState({conversation: newcon})
