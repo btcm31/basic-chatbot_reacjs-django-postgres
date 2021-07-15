@@ -180,29 +180,33 @@ def predictJson(request):
     material = ""
     amount = 0
     color = ""
-    name = ""
+    name_pro = ""
     typeRequest = ""
+    lbInform = ""
+    weight = ""
+    height = ""
+    v2 = ""
+    phone = ""
+    address = ""
+    Id_cus = ""
+    for pro in Product.objects.all():
+        if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
+            url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
+            size = pro.size
+            material = pro.material
+            amount = pro.amount
+            color = pro.color
+            name_pro = pro.product_name
     if lb == "Request":
         preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
         lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
         typeRequest = lbRe
-
-        for pro in Product.objects.all():
-            if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
-                url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
-                size = pro.size
-                material = pro.material
-                amount = pro.amount
-                color = pro.color
-                name = pro.product_name
+    
     elif lb =="Inform":
         typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
         lstlb = labelInform[np.argmax(typeInform)].split(",")
-        lbInform = lstlb[-1] if len(lstlb) == 2 else ",".join(lstlb[1:])
+        lbInform = lstlb[-1].split()[0] if len(lstlb) == 2 else "heightweight"
 
-        weight = ""
-        height = ""
-        v2 = ""
         lst = []
         if lbInform == "size":
             size = [i for i in text.split() if len(i)==1][-1]
@@ -214,10 +218,20 @@ def predictJson(request):
                 height *= 10
         if re.search('weight',lbInform):
             weight = int(re.findall('\d+',re.sub(r'\d*m\d+','',text))[0])
-        return JsonResponse({'label':lb,
-                            'infor': {'size':size,'weight':weight,'height':height,'V2':v2,'typeI':lbInform.split()[0]}})
-    return JsonResponse({'label': lb,
-                    'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
+        if lbInform == 'address':
+            pass
+        if lbInform == 'phone':
+            pass
+        if lbInform == 'Id member':
+            pass
+        if lbInform == 'ID_product':
+            pass
+        if lbInform == 'amount_product':
+            pass
+    return JsonResponse({'label':lb,
+                        'infor': {'size':size,'weight':weight,'height':height,'V2':v2,
+                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material,'color':color,'amount':amount,
+                                'name':name_pro,'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
 def imgPredict(request):
     data = json.loads(request.body)
     typeRequest = "Request"
@@ -226,7 +240,15 @@ def imgPredict(request):
     material = ""
     amount = 0
     color = ""
-    name = ""
+    name_pro = ""
+    typeRequest = ""
+    lbInform = ""
+    weight = ""
+    height = ""
+    v2 = ""
+    phone = ""
+    address = ""
+    Id_cus = ""
     if data['img'] != "":
         exist = False
         for img in ImageProduct.objects.all():
@@ -239,7 +261,7 @@ def imgPredict(request):
             diff = ImageChops.difference(imginput, imgdb)
             if not diff.getbbox():
                 url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
-                name = img.product.product_name
+                name_pro = img.product.product_name
                 size = img.product.size
                 material = img.product.material
                 amount = img.product.amount
@@ -248,7 +270,9 @@ def imgPredict(request):
                 break
         if not exist:
             typeRequest = "no-find-img"
-    return JsonResponse({'infor': {'name':name,'url': url_lst, 'color':color, 'amount': amount,'material':material,'size':size,'typeR': typeRequest}})
+    return JsonResponse({'infor': {'size':size,'weight':weight,'height':height,'V2':v2,
+                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material,'color':color,'amount':amount,
+                                'name':name_pro,'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)

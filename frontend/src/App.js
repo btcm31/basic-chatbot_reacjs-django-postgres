@@ -10,20 +10,12 @@ class App extends Component {
     this.state = {
       prediction: '',
       conversation: [],
-      product: {'name': '', 'url': '', 'color': '', 'amount': '', 'material': '', 'size': '', 'typeR': ''},
-      stateConv: 'start', //[start, inforproduct, sizeadvisory, order]
-      customerinfor:{
-        'name': '',
-        'addr' :'',
-        'amount': '',
-        'ID_product': '',
-        'phone': '',
-        'size':'',
-        'weight':'',
-        'height':'',
-        'V2':'',
-        'typeI':''
-      }
+      infor: {
+        'size':'','weight':'','height':'','V2':'',
+        'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
+        'name':'','url': '','typeI':'','typeR': ''
+      },
+      stateConv: 'start', //[start, inforproduct, sizeadvisory, order, changing, return]
     };
     this.theme = {
       background: '#f5f8fb',
@@ -50,31 +42,18 @@ class App extends Component {
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
         if(respJ.label === 'Request'){
-          if(respJ.infor.name !== ''){
-          this.setState({product:respJ.infor})
-          }
-          else if(this.state.product.typeR !== "no-find-img"){
-            this.state.product.typeR = respJ.infor.typeR
+          this.setState({stateConv: 'inforproduct'})
+          var k = this.state.infor
+          if(this.state.infor.typeR !== "no-find-img"){
+            k.typeR = respJ.infor.typeR
+            this.setState({infor:k})
           }
         }
         else if (respJ.label === 'Inform'){
-          const {customerinfor} = this.state
-          let temp = {
-            'name': customerinfor.name,
-            'addr' :customerinfor.addr,
-            'amount': customerinfor.amount,
-            'ID_product': customerinfor.ID_product,
-            'phone': customerinfor.phone,
-            'size':customerinfor.size,
-            'weight':customerinfor.weight,
-            'height':customerinfor.height,
-            'V2':customerinfor.V2,
-            'typeI':customerinfor.typeI
-          }
-          let idx = respJ.infor.typeI
-          temp[idx] = respJ.infor[respJ.infor.typeI]
-          temp.typeI = respJ.infor.typeI
-          this.setState({customerinfor:temp})
+          const {infor} = this.state
+          let temp = respJ.infor
+          temp.typeR = infor.typeR
+          this.setState({infor:temp})
         }
       })
 
@@ -90,8 +69,8 @@ class App extends Component {
     await fetch(url,reqOpt)
     .then((resp)=>resp.json())
     .then((respJ)=> {
-      this.setState({product:respJ.infor}, ()=>{
-        //
+      this.setState({infor:respJ.infor}, ()=>{
+        console.log(respJ.infor)
       })
 
     });
@@ -113,6 +92,27 @@ class App extends Component {
       this.setState({conversation: []})
     });
   };
+  consultation(jeansize,weight,v2){
+    if(weight>=40 && weight <= 56){
+      if(weight <=47){
+        return 'S'
+      }
+      else if(weight>=53){
+        return 'L'
+      }
+      return 'M'
+    }
+    else if (v2>=55 && v2<=74){
+      if(v2 <=66){
+        return 'S'
+      }
+      else if(v2>=71){
+        return 'L'
+      }
+      return 'M'
+    }
+    return 'Nonesize'
+  }
 
   render(){
     return (
@@ -157,155 +157,188 @@ class App extends Component {
                 // this step to wait to states updated
                 id: 'bot',
                 message: 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse',
+                trigger: 'bot1'
+              },
+              {
+                // this step to wait to states updated
+                id: 'bot1',
+                message: 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse',
                 trigger: 'reply'
               },
               {
                 id: 'reply',
-                message:(previousValue)=>{
+                message:()=>{
                   var mess = "";
-                  const {conversation, prediction, product,customerinfor} = this.state;
+                  const {conversation,infor,stateConv} = this.state;
+                  var prediction = this.state.prediction;
                   var newcon = conversation;
                   console.log(prediction)
                   if (prediction === 'Inform') {
                     mess = reply.Inform
-                    console.log(customerinfor)
-                    if(customerinfor.typeI === 'size'){
-                      mess = 'Vậy bạn lấy size ' + (customerinfor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
-                      if(!['m','l','s'].includes(customerinfor.size)){
-                        mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                      console.log(infor)
+                    if(stateConv === 'sizeadvisory'){
+                      console.log(infor.typeI)
+                      if(infor.typeI === 'size'){
+                        mess = 'Vậy bạn lấy size ' + (infor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
+                        if(!['m','l','s'].includes(infor.size)){
+                          mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                        }
+                      }
+                      else if(infor.typeI === 'height'){
+                        if(infor.weight === ''){
+                          mess = 'Bạn cho mình xin cân nặng nha'
+                        }
+                        else{
+                          mess = 'Bạn có số đo eo hông ạ?'
+                        }
+                      }
+                      else if(infor.typeI === 'weight'){
+                        let t = this.consultation(0,infor.weight,infor.V2);
+                        if(t !== 'Nonesize'){
+                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                        }
+                        else if(infor.V2 === ''){
+                          mess = 'Bạn có số đo eo hông ạ?'
+                        }
+                      }
+                      else if (infor.typeI === 'V2'){
+                        let t = this.consultation(0,0,infor.V2);
+                        if(t !== 'Nonesize'){
+                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                        }
+                        else{
+                          mess = 'Vậy bạn không vừa sản phẩm bên mình rồi ạ :('
+                        }
+                      }
+                      else if(infor.typeI === 'heightweight'){
+                        let t = this.consultation(infor.height,infor.weight,infor.V2);
+                        if(t !== 'Nonesize'){
+                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                        }
+                        else if(infor.V2 === ''){
+                          mess = 'Bạn có số đo eo hông ạ?'
+                        } 
+                        else{
+                          mess = 'Vậy bạn không vừa sản phẩm bên mình rồi ạ :(' 
+                        }
                       }
                     }
-                    else if(customerinfor.typeI === 'height'){
-                      if(customerinfor.weight === ''){
-                        mess = 'Bạn cho mình xin cân nặng nha'
-                      }
+                    else if(stateConv === 'order'){
+                      
                     }
-                    else if(customerinfor.typeI === 'weight'){
-                      if(customerinfor.V2 === ''){
-                        mess = 'Bạn có số đo eo hông ạ?'
-                      }
+                    else if(stateConv === 'inforproduct'){
+                      prediction = 'Request'
                     }
-                    else if (customerinfor.typeI === 'V2'){
-                      if(customerinfor.weight === ''){
-                        mess = 'Bạn cho mình xin cân nặng nha'
-                      }
+                    else if(stateConv === 'start'){
+
                     }
-                    if(customerinfor.weight > 70){
-                      mess = "Bạn mặc size L là đẹp xỉu luôn nha."
-                    }
+                    
                   }
-                  else if(prediction === 'Request'){
-                    console.log(product.typeR)
-                    if(product.typeR === 'amount_product'){
-                      mess = product.name + ' còn ' + String(product.amount) + ' cái nha.'
-                      if(product.name === ''){
+                  if(prediction === 'Request'){
+                    this.setState({stateConv:'inforproduct'})
+                    console.log(infor.typeR)
+                    if(infor.typeR === 'amount_product'){
+                      mess = infor.name + ' còn ' + String(infor.amount) + ' cái nha.'
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'amount_product'})
-                      }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
                       }
                     }
-                    else if(product.typeR === 'no-find-img'){
+                    else if(infor.typeR === 'no-find-img'){
                       mess = reply.Request['no-find-img']
                     }
-                    else if (product.typeR === 'size'){
-                      mess = product.name + ' còn size ' + product.size + ' nha.'
-                      if(product.name === ''){
+                    else if (infor.typeR === 'size'){
+                      mess = infor.name + ' còn size ' + infor.size + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'size'})
                       }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
+                      if (this.state.stateConv!=="inforproduct"){
+                        this.setState({stateConv:'sizeadvisory'})
                       }
                     }
-                    else if (product.typeR === 'material_product'){
-                      mess = 'Dạ ' + product.name + ' chất ' + product.material + ' nha.'
-                      if(product.name === ''){
+                    else if (infor.typeR === 'material_product'){
+                      mess = 'Dạ ' + infor.name + ' chất ' + infor.material + ' nha.'
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'material_product'})
-                      }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
                       }
                     }
-                    else if (product.typeR === 'shiping fee'){
+                    else if (infor.typeR === 'shiping fee'){
                       mess = reply.Request['shipping fee']
                     }
-                    else if (product.typeR === 'product_image'){
-                      mess = 'http://localhost:8000' + product.url[0]
-                      if(product.name === ''){
+                    else if (infor.typeR === 'product_image'){
+                      mess = 'http://localhost:8000' + infor.url[0]
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'product_image'})
-                      }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
                       }
                     }
-                    else if (product.typeR === 'color_product'){
-                      mess = product.name + ' còn màu ' + product.color + ' nha.'
-                      if(product.name === ''){
+                    else if (infor.typeR === 'color_product'){
+                      mess = infor.name + ' còn màu ' + infor.color + ' nha.'
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'color_product'})
-                      }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
                       }
                     }
-                    else if (product.typeR === 'cost_product'){
-                      mess = product.name + ' có giá 380k giảm còn 195k nha.'
-                      if(product.name === ''){
+                    else if (infor.typeR === 'cost_product'){
+                      mess = infor.name + ' có giá 380k giảm còn 195k nha.'
+                      if(infor.name === ''){
                         mess = reply.Request.not_ID_product
-                        this.setState({stateConv:'cost_product'})
-                      }
-                      else if (this.state.stateConv!==""){
-                        this.setState({stateConv:''})
                       }
                     }
-                    else if (product.typeR === 'ID_product'){
-                      mess = product.name + ' còn ' + String(product.amount) + ' cái. Chất liệu ' + product.material + ' nha. Bạn cho mình số đo mình tư vấn thêm nha.'
-                      if(product.name === ''){
+                    else if (infor.typeR === 'ID_product'){
+                      mess = infor.name + ' còn ' + String(infor.amount) + ' cái. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn thêm nha.'
+                      if(infor.name === ''){
                         mess = reply.Request.not_found_product
                       }
                     }
-                    else if (product.typeR === 'Time'){
+                    else if (infor.typeR === 'Time'){
                       mess = reply.Request.Time
                     }
-                    else if (product.typeR === 'address'){
+                    else if (infor.typeR === 'address'){
                       mess = reply.Request.address
                     }
                     else {
                       mess = 'Để mình check thử nha'
                     }
                   }
-                  else if (prediction === 'Order'){
+                  if (prediction === 'Order'){
                     mess = reply.Order
                   }
-                  else if (prediction === 'Changing'){
+                  if (prediction === 'Changing'){
                     mess = reply.Changing
+                    this.setState({stateConv:'changing'})
                   }
-                  else if (prediction === 'Return'){
+                  if (prediction === 'Return'){
                     mess = reply.Return
+                    this.setState({stateConv:'return'})
                   }
-                  else if (prediction === 'feedback'){
+                  if (prediction === 'feedback'){
                     mess = reply.Feedback
                   }
-                  else if (prediction === 'Hello'){
+                  if (prediction === 'Hello'){
                     mess = reply.Hello
                   }
-                  else if (prediction === 'Connect'){
+                  if (prediction === 'Connect'){
                     mess = reply.Connect
                   }
-                  else if (prediction === 'Done'){
+                  if (prediction === 'Done'){
                     mess = reply.Done
-                    this.setState({product: {'name': '', 'url': '', 'color':'', 'amount': '', 'material': '', 'size': '', 'typeR': ''}})
+                    this.setState({infor: {
+                      'size':'','weight':'','height':'','V2':'',
+                      'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
+                      'name':'','url': '','typeI':'','typeR': ''
+                    }})
                     newcon.push('Bot: ' + mess)
                     this.conversationUpdate(newcon)
                   }
-                  else if(prediction === 'OK'){
+                  if(prediction === 'OK'){
                     mess = reply.OK
+                    if(stateConv === 'sizeadvisory'){
+                      this.setState({stateConv:'order'})
+                      mess = 'Bạn cho mình xin tên + sđt + địa chỉ mình ship cho bạn nha'
+                    }
+                    else if(stateConv === 'order'){
+
+                    }
                   }
-                  else{
+                  if(prediction === 'Other'){
                     mess = reply.Other
                   }
                   newcon.push('Bot: ' + mess)
