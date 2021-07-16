@@ -41,17 +41,56 @@ class App extends Component {
     .then((resp)=>resp.json())
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
+        console.log(respJ.infor)
+        const {infor} = this.state
+        let temp = infor
+        if(respJ.infor.typeI === 'ID_product'){
+          temp = respJ.infor
+        }
+        else if(respJ.infor.typeI === 'height'){
+          temp.height = respJ.infor.height
+        }
+        else if(respJ.infor.typeI === 'weight'){
+          temp.weight = respJ.infor.weight
+        }
+        else if(respJ.infor.typeI === 'heightweight'){
+          temp.height = respJ.infor.height
+          temp.weight = respJ.infor.weight
+        }
+        else if(respJ.infor.typeI === 'size'){
+          temp.size = respJ.infor.size
+        }
+        else if(respJ.infor.typeI === 'V2'){
+          temp.V2 = respJ.infor.V2
+        }
+        else if(respJ.infor.typeI === 'phone'){
+          temp.phone = respJ.infor.phone
+        }
+        else if(respJ.infor.typeI === 'address'){
+          temp.addr = respJ.infor.addr
+        }
+        else if(respJ.infor.typeI === 'amount_product'){
+          temp.amount = respJ.infor.amount
+        }
         if(respJ.label === 'Request'){
           this.setState({stateConv: 'inforproduct'})
-          var k = this.state.infor
-          if(this.state.infor.typeR !== "no-find-img"){
-            k.typeR = respJ.infor.typeR
-            this.setState({infor:k})
+          if(respJ.infor.typeI !== 'size' && respJ.infor.typeR === 'size'){
+            this.setState({stateConv: 'sizeadvisory'})
+          } 
+          if(this.state.infor.typeR !== "no-find-img" && respJ.infor.name === ''){
+            temp.typeR = respJ.infor.typeR
+            temp.typeI = respJ.infor.typeI
+            this.setState({infor:temp})
+          }
+          else if(this.state.infor.name !== respJ.infor.name){
+            this.setState({infor:respJ.infor})
           }
         }
         else if (respJ.label === 'Inform'){
-          const {infor} = this.state
-          let temp = respJ.infor
+          if(respJ.infor.typeI !== 'size' && respJ.infor.typeR === 'size'){
+            this.setState({stateConv: 'sizeadvisory'})
+          } 
+          temp.typeI = respJ.infor.typeI
           temp.typeR = infor.typeR
           this.setState({infor:temp})
         }
@@ -173,9 +212,10 @@ class App extends Component {
                   var prediction = this.state.prediction;
                   var newcon = conversation;
                   console.log(prediction)
+                  console.log(stateConv)
                   if (prediction === 'Inform') {
                     mess = reply.Inform
-                      console.log(infor)
+                    console.log(infor)
                     if(stateConv === 'sizeadvisory'){
                       console.log(infor.typeI)
                       if(infor.typeI === 'size'){
@@ -189,7 +229,7 @@ class App extends Component {
                           mess = 'Bạn cho mình xin cân nặng nha'
                         }
                         else{
-                          mess = 'Bạn có số đo eo hông ạ?'
+                          mess = reply.Request.size['V2-customer']
                         }
                       }
                       else if(infor.typeI === 'weight'){
@@ -198,16 +238,16 @@ class App extends Component {
                           mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
                         }
                         else if(infor.V2 === ''){
-                          mess = 'Bạn có số đo eo hông ạ?'
+                          mess = reply.Request.size['V2-customer']
                         }
                       }
                       else if (infor.typeI === 'V2'){
-                        let t = this.consultation(0,0,infor.V2);
+                        let t = this.consultation(0,infor.weight,infor.V2);
                         if(t !== 'Nonesize'){
                           mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
                         }
                         else{
-                          mess = 'Vậy bạn không vừa sản phẩm bên mình rồi ạ :('
+                          mess = reply.Request.size['not-found-size']
                         }
                       }
                       else if(infor.typeI === 'heightweight'){
@@ -219,7 +259,7 @@ class App extends Component {
                           mess = 'Bạn có số đo eo hông ạ?'
                         } 
                         else{
-                          mess = 'Vậy bạn không vừa sản phẩm bên mình rồi ạ :(' 
+                          mess = reply.Request.size['not-found-size'] 
                         }
                       }
                     }
@@ -230,12 +270,10 @@ class App extends Component {
                       prediction = 'Request'
                     }
                     else if(stateConv === 'start'){
-
+                      
                     }
-                    
                   }
                   if(prediction === 'Request'){
-                    this.setState({stateConv:'inforproduct'})
                     console.log(infor.typeR)
                     if(infor.typeR === 'amount_product'){
                       mess = infor.name + ' còn ' + String(infor.amount) + ' cái nha.'
@@ -247,12 +285,59 @@ class App extends Component {
                       mess = reply.Request['no-find-img']
                     }
                     else if (infor.typeR === 'size'){
-                      mess = infor.name + ' còn size ' + infor.size + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      mess = infor.name + ' còn size ' + (infor.size).toUpperCase() + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
                       if(infor.name === ''){
                         mess = reply.Request.not_ID_product
                       }
-                      if (this.state.stateConv!=="inforproduct"){
-                        this.setState({stateConv:'sizeadvisory'})
+                      console.log(stateConv)
+                      if(stateConv === 'sizeadvisory'){
+                        if(infor.typeI === 'size'){
+                          mess = 'Vậy bạn lấy size ' + (infor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
+                          if(!['m','l','s'].includes(infor.size)){
+                            mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                          }
+                        }
+                        else if(infor.typeI === 'height'){
+                          if(infor.weight === ''){
+                            mess = reply.Request.size['weight-customer']
+                          }
+                          else{
+                            mess = reply.Request.size['V2-customer']
+                          }
+                        }
+                        else if(infor.typeI === 'weight'){
+                          let t = this.consultation(0,infor.weight,infor.V2);
+                          if(t !== 'Nonesize'){
+                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                          }
+                          else if(infor.V2 === ''){
+                            mess = reply.Request.size['V2-customer']
+                          }
+                        }
+                        else if (infor.typeI === 'V2'){
+                          let t = this.consultation(0,infor.weight,infor.V2);
+                          if(t !== 'Nonesize'){
+                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                          }
+                          else{
+                            mess = reply.Request.size['not-found-size']
+                          }
+                          if(infor.weight === ''){
+                            mess = reply.Request.size['weight-customer']
+                          }
+                        }
+                        else if(infor.typeI === 'heightweight'){
+                          let t = this.consultation(0,infor.weight,infor.V2);
+                          if(t !== 'Nonesize'){
+                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                          }
+                          else if(infor.V2 === ''){
+                            mess = reply.Request.size['V2-customer']
+                          } 
+                          else{
+                            mess = reply.Request.size['not-found-size'] 
+                          }
+                        }
                       }
                     }
                     else if (infor.typeR === 'material_product'){

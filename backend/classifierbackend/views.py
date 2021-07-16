@@ -169,12 +169,6 @@ def text_preprocess(document):
     document = re.sub(r'\s+', ' ', document).strip()
     return document
 def predictJson(request):
-    data = json.loads(request.body)
-    text = data['text'].encode().decode('utf-8')
-    text = text_preprocess(text)
-    pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
-    lb = label[np.argmax(pre)]
-
     url_lst = []
     size = ""
     material = ""
@@ -189,6 +183,61 @@ def predictJson(request):
     phone = ""
     address = ""
     Id_cus = ""
+
+    data = json.loads(request.body)
+    text = data['text'].encode().decode('utf-8')
+    text = text_preprocess(text)
+
+    pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
+    lb = label[np.argmax(pre)]
+
+    preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
+    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
+    typeRequest = lbRe
+
+    typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
+    lstlb = labelInform[np.argmax(typeInform)].split(",")
+    lbInform = lstlb[-1].split()[0] if len(lstlb) == 2 else "heightweight"
+
+    '''Extract entity'''
+
+        
+    lst = []
+    if lbInform == "size":
+        try:
+            size = [i for i in text.split() if len(i)==1][-1]
+        except:
+            pass
+    if lbInform == "V2":
+        try:
+            v2 = int(re.findall(r'\d+',text)[0])
+        except:
+            pass
+    if re.search('height',lbInform):
+        try:
+            height = int(re.sub(r'.*m','1',re.findall(r'\d*m\d+',text)[0]))
+        except:
+            pass
+        if height < 100:
+            height *= 10
+    if re.search('weight',lbInform):
+        try:
+            weight = int(re.findall(r'\d+',text)[0])
+        except:
+            pass
+    if lbInform == 'address':
+        pass
+    if lbInform == 'phone':
+        try:
+            phone = re.findall(r'\d+',text)[0]
+        except:
+            pass
+    if lbInform == 'Id member':
+        pass
+    if lbInform == 'ID_product':
+        pass
+    if lbInform == 'amount_product':
+        pass
     for pro in Product.objects.all():
         if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
@@ -197,37 +246,6 @@ def predictJson(request):
             amount = pro.amount
             color = pro.color
             name_pro = pro.product_name
-    if lb == "Request":
-        preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
-        lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
-        typeRequest = lbRe
-    
-    elif lb =="Inform":
-        typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
-        lstlb = labelInform[np.argmax(typeInform)].split(",")
-        lbInform = lstlb[-1].split()[0] if len(lstlb) == 2 else "heightweight"
-
-        lst = []
-        if lbInform == "size":
-            size = [i for i in text.split() if len(i)==1][-1]
-        if lbInform == "V2":
-            v2 = int(re.findall(r'\d+',text)[0])
-        if re.search('height',lbInform):
-            height = int(re.sub(r'.*m','1',re.findall(r'\d*m\d+',text)[0]))
-            if height < 100:
-                height *= 10
-        if re.search('weight',lbInform):
-            weight = int(re.findall('\d+',re.sub(r'\d*m\d+','',text))[0])
-        if lbInform == 'address':
-            pass
-        if lbInform == 'phone':
-            pass
-        if lbInform == 'Id member':
-            pass
-        if lbInform == 'ID_product':
-            pass
-        if lbInform == 'amount_product':
-            pass
     return JsonResponse({'label':lb,
                         'infor': {'size':size,'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material,'color':color,'amount':amount,
@@ -257,9 +275,12 @@ def imgPredict(request):
             try:
                 imgdb = Image.open(img.image)
             except:
-                continue
-            diff = ImageChops.difference(imginput, imgdb)
-            if not diff.getbbox():
+                pass
+            try:
+                diff = ImageChops.difference(imginput, imgdb).getbbox()
+            except:
+                diff = True
+            if not diff:
                 url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
                 name_pro = img.product.product_name
                 size = img.product.size

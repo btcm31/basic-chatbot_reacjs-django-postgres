@@ -15,7 +15,8 @@
             "weight-customer":"Bạn cho mình xin cân nặng để mình chọn size chuẩn cho bạn nha.",
             "V2-customer": "Còn số đo eo bạn có k ạ?",
             "max-size": "Size lớn nhất bên mình là L (53-56kg) á, nếu bạn ok thì để mình chốt cho bạn lun nha.",
-            "min-size": "Size nhỏ nhất bên mình là S (40-47kg) á, nếu bạn ok thì để mình chốt cho bạn lun nha."
+            "min-size": "Size nhỏ nhất bên mình là S (40-47kg) á, nếu bạn ok thì để mình chốt cho bạn lun nha.",
+            "not-found-size":"Vậy bạn không vừa sản phẩm bên mình rồi ạ :("
         },
         "material_product": "",
         "cost_product": "",
