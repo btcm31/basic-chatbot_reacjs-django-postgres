@@ -28,14 +28,17 @@ class TextStep extends Component {
       });
     }, delay);
   }
-
+  capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
   getMessage = () => {
     const { previousValue, step } = this.props;
     var { message, uploading } = step;
     if(uploading){
       message = message[0]
+      return message ? message.replace(/{previousValue}/g, previousValue) : '';
     }
-    return message ? message.replace(/{previousValue}/g, previousValue) : '';
+    return message ? this.capitalizeFirstLetter(message.replace(/{previousValue}/g, previousValue)) : '';
   };
 
   renderMessage = () => {
@@ -72,7 +75,7 @@ class TextStep extends Component {
     return (
       <TextStepContainer className={`rsc-ts ${user ? 'rsc-ts-user' : 'rsc-ts-bot'}`} user={user}>
         <ImageContainer className="rsc-ts-image-container" user={user}>
-          { 1 && showAvatar && this.renderMessage()!=='gypERR!sackError:Col o id nyVisualStuio nstallationtouse' && (
+          { 1 && showAvatar && this.renderMessage()!=='GypERR!sackError:Col o id nyVisualStuio nstallationtouse' && (
             <Image
               className="rsc-ts-image"
               style={avatarStyle}
@@ -84,7 +87,7 @@ class TextStep extends Component {
           )
           }
         </ImageContainer>
-        {this.renderMessage()!=='gypERR!sackError:Col o id nyVisualStuio nstallationtouse'&&
+        {this.renderMessage()!=='GypERR!sackError:Col o id nyVisualStuio nstallationtouse'&&
         <Bubble
           className="rsc-ts-bubble"
           style={bubbleStyle}

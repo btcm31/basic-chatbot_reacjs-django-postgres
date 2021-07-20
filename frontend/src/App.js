@@ -16,6 +16,15 @@ class App extends Component {
         'name':'','url': '','typeI':'','typeR': ''
       },
       stateConv: 'start', //[start, inforproduct, sizeadvisory, order, changing, return]
+      order: {
+        name_product: '',
+        amount: '',
+        size: '',
+        color: '',
+        addr: '',
+        phone: '',
+        name_cus: ''
+      }
     };
     this.theme = {
       background: '#f5f8fb',
@@ -44,32 +53,36 @@ class App extends Component {
         console.log(respJ.infor)
         const {infor} = this.state
         let temp = infor
-        if(respJ.infor.typeI === 'ID_product'){
+        if(respJ.infor.typeI === 'ID_product' && respJ.infor.name !== ""){
           temp = respJ.infor
         }
-        else if(respJ.infor.typeI === 'height'){
+        else if(respJ.infor.typeI === 'height' && respJ.infor.height!==''){
           temp.height = respJ.infor.height
         }
-        else if(respJ.infor.typeI === 'weight'){
+        else if(respJ.infor.typeI === 'weight' && respJ.infor.weight!==''){
+          console.log('ok')
           temp.weight = respJ.infor.weight
         }
         else if(respJ.infor.typeI === 'heightweight'){
           temp.height = respJ.infor.height
           temp.weight = respJ.infor.weight
         }
-        else if(respJ.infor.typeI === 'size'){
-          temp.size = respJ.infor.size
+        else if(respJ.infor.typeI === 'size'&& respJ.infor.size!==''){
+          if(!(infor.size).includes(respJ.infor.size)){
+            temp.size = 'None' + respJ.infor.size
+          }
+          else temp.size = respJ.infor.size
         }
-        else if(respJ.infor.typeI === 'V2'){
+        else if(respJ.infor.typeI === 'V2'&& respJ.infor.V2!==''){
           temp.V2 = respJ.infor.V2
         }
-        else if(respJ.infor.typeI === 'phone'){
+        else if(respJ.infor.typeI === 'phone'&& respJ.infor.phone!==''){
           temp.phone = respJ.infor.phone
         }
-        else if(respJ.infor.typeI === 'address'){
+        else if(respJ.infor.typeI === 'address'&& respJ.infor.addr!==''){
           temp.addr = respJ.infor.addr
         }
-        else if(respJ.infor.typeI === 'amount_product'){
+        else if(respJ.infor.typeI === 'amount_product'&& respJ.infor.amount!==''){
           temp.amount = respJ.infor.amount
         }
         if(respJ.label === 'Request'){
@@ -111,7 +124,6 @@ class App extends Component {
       this.setState({infor:respJ.infor}, ()=>{
         console.log(respJ.infor)
       })
-
     });
   };
 
@@ -208,7 +220,7 @@ class App extends Component {
                 id: 'reply',
                 message:()=>{
                   var mess = "";
-                  const {conversation,infor,stateConv} = this.state;
+                  const {conversation,infor,stateConv,order} = this.state;
                   var prediction = this.state.prediction;
                   var newcon = conversation;
                   console.log(prediction)
@@ -219,8 +231,8 @@ class App extends Component {
                     if(stateConv === 'sizeadvisory'){
                       console.log(infor.typeI)
                       if(infor.typeI === 'size'){
-                        mess = 'Vậy bạn lấy size ' + (infor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
-                        if(!['m','l','s'].includes(infor.size)){
+                        mess = 'Vậy bạn lấy size ' + infor.size + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
+                        if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
                           mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
                         }
                       }
@@ -264,7 +276,7 @@ class App extends Component {
                       }
                     }
                     else if(stateConv === 'order'){
-                      
+                      prediction = 'Order'
                     }
                     else if(stateConv === 'inforproduct'){
                       prediction = 'Request'
@@ -276,7 +288,10 @@ class App extends Component {
                   if(prediction === 'Request'){
                     console.log(infor.typeR)
                     if(infor.typeR === 'amount_product'){
-                      mess = infor.name + ' còn ' + String(infor.amount) + ' cái nha.'
+                      if(infor.amount === 0){
+                        mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
+                      }
+                      else mess = infor.name + ' còn ' + String(infor.amount) + ' cái nha.'
                       if(infor.name === ''){
                         mess = reply.Request.not_ID_product
                       }
@@ -285,15 +300,24 @@ class App extends Component {
                       mess = reply.Request['no-find-img']
                     }
                     else if (infor.typeR === 'size'){
-                      mess = infor.name + ' còn size ' + (infor.size).toUpperCase() + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      mess = infor.name + ' còn size ' + infor.size + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
+                        mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                      }
+                      if((infor.size).includes('None')){
+                        if(!['m','l','s','M','L','S'].includes((infor.size).slice(-1))){
+                          mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                        }
+                        else mess = infor.name + ' hết size ' + (infor.size).slice(-1) + ' rồi nha.'
+                       }
                       if(infor.name === ''){
                         mess = reply.Request.not_ID_product
                       }
                       console.log(stateConv)
                       if(stateConv === 'sizeadvisory'){
                         if(infor.typeI === 'size'){
-                          mess = 'Vậy bạn lấy size ' + (infor.size).toUpperCase() + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
-                          if(!['m','l','s'].includes(infor.size)){
+                          mess = 'Vậy bạn lấy size ' + infor.size + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
+                          if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
                             mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
                           }
                         }
@@ -384,7 +408,31 @@ class App extends Component {
                     }
                   }
                   if (prediction === 'Order'){
-                    mess = reply.Order
+                    this.setState({stateConv: 'order'})
+                    if(order.name_product === ''){
+                      mess = reply.Request.not_ID_product
+                    }
+                    else if(order.color === ''){
+                      mess = 'Bạn lấy màu gì á?'
+                    }
+                    else if(order.size === ''){
+                      mess = 'Bạn lấy size nào á?'
+                    }
+                    else if(order.amount === ''){
+                      mess = 'Bạn lấy mấy cái á?'
+                    }
+                    else if(order.name === ''){
+                      mess = 'Bạn cho mình xin tên nha.'
+                    }
+                    else if(order.addr === ''){
+                      mess = 'Bạn cho mình xin địa chỉ cụ thể nha.'
+                    }
+                    else if(order.phone === ''){
+                      mess = 'Bạn cho mình xin số điện thoại để shipper gọi cho bạn nha.'
+                    }
+                    else {
+                      mess = 'Bạn kiểm tra lại thông tin một lần nữa nha'
+                    }
                   }
                   if (prediction === 'Changing'){
                     mess = reply.Changing
@@ -417,6 +465,7 @@ class App extends Component {
                     mess = reply.OK
                     if(stateConv === 'sizeadvisory'){
                       this.setState({stateConv:'order'})
+                      console.log(infor)
                       mess = 'Bạn cho mình xin tên + sđt + địa chỉ mình ship cho bạn nha'
                     }
                     else if(stateConv === 'order'){
@@ -430,8 +479,22 @@ class App extends Component {
                   this.setState({conversation: newcon})
                   return mess
                 } ,
-                trigger: 'user'
+                trigger: (value)=>{
+                  console.log(value.steps.reply.message)
+                  //return 'order'
+                  return 'user'
+                }
               },
+              {
+                id: 'order',
+                message: 'ho va ten',
+                trigger: 'order2'
+              },
+              {
+                id: 'order2',
+                message: 'so dien thoai',
+                trigger:'user'
+              }
             ]}
           />
           </ThemeProvider>

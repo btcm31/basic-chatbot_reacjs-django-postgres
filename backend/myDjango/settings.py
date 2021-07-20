@@ -92,7 +92,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
-        'NAME': 'conversations',
+        'NAME': 'chatbot',
         'USER': 'postgres',
         'PASSWORD': 'congminh',
     }

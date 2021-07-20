@@ -481,7 +481,7 @@ class ChatBot extends Component {
     const { defaultUserSettings, inputValue,url, previousSteps, renderedSteps,uploading } = this.state;
     let { currentStep } = this.state;
     const isInvalid = currentStep.validator && this.checkInvalidInput();
-    if(!inputValue && !uploading && url[0])
+    if(!inputValue && !uploading && !url[0])
       return;
     if (!isInvalid) {
       var step = {};
@@ -527,7 +527,6 @@ class ChatBot extends Component {
     const { currentStep, inputValue } = this.state;
     const result = currentStep.validator(inputValue);
     const value = inputValue;
-
     if (typeof result !== 'boolean' || !result) {
       this.setState(
         {

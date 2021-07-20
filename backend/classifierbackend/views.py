@@ -7,7 +7,7 @@ import numpy as np
 import regex as re
 import bogo
 from unidecode import unidecode
-from .models import Conversation, Product, ImageProduct
+from .models import Conversation, Product, ImageProduct, ColorProduct, SizeProduct
 from PIL import Image, ImageChops
 from io import BytesIO
 import base64
@@ -168,12 +168,25 @@ def text_preprocess(document):
     # remove multiple space character
     document = re.sub(r'\s+', ' ', document).strip()
     return document
+def extractHeight(x):
+    if re.search(r'\d{3}',x):
+        return int(x)
+    elif re.search(r'[\w]met',x):
+        return int(re.sub(r'met','',x))
+    elif re.search(r'met',x):
+        return 100 + int((re.sub(r'met','',x)+'0')[:2])
+    elif re.search(r'm\d{1,2}',x):
+        return 100 + int((re.sub(r'[\d]*m','',x)+'0')[:2])
+    elif re.search(r'\d[\.]\d{1,2}',x):
+        return int((re.sub(r'\.','',x)+'0')[:3])
+    elif re.search(r'[\.]\d{1,2}',x):
+        return 100 + int((re.sub(r'\.','',x)+'0')[:2])
 def predictJson(request):
     url_lst = []
-    size = ""
+    size = []
     material = ""
-    amount = 0
-    color = ""
+    amount = ""
+    color = []
     name_pro = ""
     typeRequest = ""
     lbInform = ""
@@ -200,36 +213,35 @@ def predictJson(request):
     lbInform = lstlb[-1].split()[0] if len(lstlb) == 2 else "heightweight"
 
     '''Extract entity'''
-
-        
     lst = []
     if lbInform == "size":
         try:
-            size = [i for i in text.split() if len(i)==1][-1]
+            temp = re.findall(r'(size|sz|sai)\s*(s|m|l|S|M|L)\s',text)
+            size = [i[1] for i in temp]
         except:
             pass
     if lbInform == "V2":
         try:
-            v2 = int(re.findall(r'\d+',text)[0])
+            v2 = int(re.findall(r'\d{2,3}',text)[0])
         except:
             pass
     if re.search('height',lbInform):
         try:
-            height = int(re.sub(r'.*m','1',re.findall(r'\d*m\d+',text)[0]))
+            temp = re.findall(r"(\d*(m|met|\.)\d{1,2}|\d{3})",text)
+            height = extractHeight(temp[0][0]) if len(temp)>0 else ""
         except:
             pass
-        if height < 100:
-            height *= 10
     if re.search('weight',lbInform):
         try:
-            weight = int(re.findall(r'\d+',text)[0])
+            temp = re.findall(r"(\d{2,3}(k\w))",text)
+            weight = int(re.sub(r'k\w*','',temp[0][0]))
         except:
             pass
     if lbInform == 'address':
         pass
     if lbInform == 'phone':
         try:
-            phone = re.findall(r'\d+',text)[0]
+            phone = re.findall(r'\d{10}',text)[0]
         except:
             pass
     if lbInform == 'Id member':
@@ -237,27 +249,30 @@ def predictJson(request):
     if lbInform == 'ID_product':
         pass
     if lbInform == 'amount_product':
-        pass
+        try:
+            amount = int(re.findall(r'\d+',text)[0])
+        except:
+            pass
     for pro in Product.objects.all():
         if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
-            size = pro.size
+            size = [i.name for i in SizeProduct.objects.filter(product_id=pro.id)]
             material = pro.material
             amount = pro.amount
-            color = pro.color
+            color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
             name_pro = pro.product_name
     return JsonResponse({'label':lb,
-                        'infor': {'size':size,'weight':weight,'height':height,'V2':v2,
-                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material,'color':color,'amount':amount,
-                                'name':name_pro,'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
+                        'infor': {'size':','.join(set(size)).upper(),'weight':weight,'height':height,'V2':v2,
+                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),'color':','.join(set(color)).lower(),'amount':amount,
+                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
 def imgPredict(request):
     data = json.loads(request.body)
     typeRequest = "Request"
     url_lst = []
-    size = ""
+    size = []
     material = ""
-    amount = 0
-    color = ""
+    amount = ""
+    color = []
     name_pro = ""
     typeRequest = ""
     lbInform = ""
@@ -283,17 +298,18 @@ def imgPredict(request):
             if not diff:
                 url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
                 name_pro = img.product.product_name
-                size = img.product.size
+                size = [i.name for i in SizeProduct.objects.filter(product_id=img.product.id)]
                 material = img.product.material
                 amount = img.product.amount
-                color = img.product.color
+                color = [i.name for i in ColorProduct.objects.filter(product_id=img.product.id)]
                 exist = True
                 break
         if not exist:
             typeRequest = "no-find-img"
-    return JsonResponse({'infor': {'size':size,'weight':weight,'height':height,'V2':v2,
-                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material,'color':color,'amount':amount,
-                                'name':name_pro,'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
+    return JsonResponse({'infor': {'size':','.join(set(size)).upper(),'weight':weight,'height':height,'V2':v2,
+                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),
+                                'color':','.join(set(color)).lower(),'amount':amount,
+                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)
@@ -301,3 +317,6 @@ def conversation(request):
     nums = Conversation.objects.count() + 1
     conversation = Conversation.objects.create(content=conv,num=nums)
     return JsonResponse({'conv': conv})
+
+def order(request):
+    pass
