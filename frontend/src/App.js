@@ -11,11 +11,14 @@ class App extends Component {
       prediction: '',
       conversation: [],
       infor: {
-        'size':'','weight':'','height':'','V2':'',
-        'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
-        'name':'','url': '','typeI':'','typeR': ''
+        size: '', weight: '', height: '', V2: '',
+        phone: '', Id_cus: '', addr: '', material: '',
+        color: '', amount: '', price: '' ,
+        name: '',url: '' ,typeI: '',typeR: '' 
       },
-      stateConv: 'start', //[start, inforproduct, sizeadvisory, order, changing, return]
+      stateConv: 'inforproduct', //[inforproduct, sizeadvisory, order, changing, return]
+      sizeR: '',
+      previousIntent: '',
       order: {
         name_product: '',
         amount: '',
@@ -23,20 +26,21 @@ class App extends Component {
         color: '',
         addr: '',
         phone: '',
-        name_cus: ''
+        name_cus: '',
+        price: ''
       }
     };
     this.theme = {
-      background: '#f5f8fb',
+      background: 'rgba(255, 255, 255, 1)',
       fontFamily: 'Helvetica Neue',
       'border-radius': '10px',
-      headerBgColor: '#EF6C00',
+      headerBgColor: 'rgba(141, 131, 156, 0.667)',
       headerFontColor: '#fff',
-      headerFontSize: '15px',
-      botBubbleColor: '#EF6C00',
-      botFontColor: '#fff',
-      userBubbleColor: '#fff',
-      userFontColor: '#4a4a4a',
+      headerFontSize: '25px',
+      botBubbleColor: '#fff',
+      botFontColor: '#4a4a4a',
+      userBubbleColor: 'rgba(141, 131, 156, 0.667)',
+      userFontColor: '#fff',
     };
   };
 
@@ -51,15 +55,19 @@ class App extends Component {
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
         console.log(respJ.infor)
-        const {infor} = this.state
+        const {infor,order,stateConv,previousIntent} = this.state
         let temp = infor
-        if(respJ.infor.typeI === 'ID_product' && respJ.infor.name !== ""){
+        this.setState({sizeR: respJ.infor.size})
+        if(infor.name === "" && respJ.infor.name !== ""){
           temp = respJ.infor
         }
-        else if(respJ.infor.typeI === 'height' && respJ.infor.height!==''){
+        else if(infor.name !== "" && respJ.infor.name !== "" && respJ.infor.name !== infor.name){
+          temp = respJ.infor
+        }
+        else if(respJ.infor.typeI === 'height' && respJ.infor.height !== ''){
           temp.height = respJ.infor.height
         }
-        else if(respJ.infor.typeI === 'weight' && respJ.infor.weight!==''){
+        else if(respJ.infor.typeI === 'weight' && respJ.infor.weight !== ''){
           console.log('ok')
           temp.weight = respJ.infor.weight
         }
@@ -67,45 +75,107 @@ class App extends Component {
           temp.height = respJ.infor.height
           temp.weight = respJ.infor.weight
         }
-        else if(respJ.infor.typeI === 'size'&& respJ.infor.size!==''){
+        else if(respJ.infor.typeI === 'size' && respJ.infor.size !== ''){
           if(!(infor.size).includes(respJ.infor.size)){
-            temp.size = 'None' + respJ.infor.size
+            this.setState({sizeR:'None' + respJ.infor.size})
           }
-          else temp.size = respJ.infor.size
+          else if(respJ.label === 'Inform'){
+            this.setState({sizeR:respJ.infor.size})
+          }
         }
-        else if(respJ.infor.typeI === 'V2'&& respJ.infor.V2!==''){
+        else if(respJ.infor.typeI === 'V2' && respJ.infor.V2 !== ''){
           temp.V2 = respJ.infor.V2
         }
-        else if(respJ.infor.typeI === 'phone'&& respJ.infor.phone!==''){
+        else if(respJ.infor.typeI === 'phone' && respJ.infor.phone !== ''){
           temp.phone = respJ.infor.phone
         }
-        else if(respJ.infor.typeI === 'address'&& respJ.infor.addr!==''){
+        else if(respJ.infor.typeI === 'address' && respJ.infor.addr !== ''){
           temp.addr = respJ.infor.addr
         }
-        else if(respJ.infor.typeI === 'amount_product'&& respJ.infor.amount!==''){
+        else if(respJ.infor.typeI === 'amount_product' && respJ.infor.amount !== ''){
           temp.amount = respJ.infor.amount
         }
         if(respJ.label === 'Request'){
           this.setState({stateConv: 'inforproduct'})
-          if(respJ.infor.typeI !== 'size' && respJ.infor.typeR === 'size'){
+          if(respJ.infor.typeI !== 'size'&& respJ.infor.typeR === 'size'){
             this.setState({stateConv: 'sizeadvisory'})
           } 
-          if(this.state.infor.typeR !== "no-find-img" && respJ.infor.name === ''){
+          if(infor.typeR !== "no-find-img" && respJ.infor.name === ''){
             temp.typeR = respJ.infor.typeR
             temp.typeI = respJ.infor.typeI
             this.setState({infor:temp})
           }
-          else if(this.state.infor.name !== respJ.infor.name){
+          else if(infor.name !== respJ.infor.name){
             this.setState({infor:respJ.infor})
           }
         }
         else if (respJ.label === 'Inform'){
-          if(respJ.infor.typeI !== 'size' && respJ.infor.typeR === 'size'){
+          if((respJ.infor.typeI === 'size' || respJ.infor.typeR === 'size') && stateConv !== 'order'){
             this.setState({stateConv: 'sizeadvisory'})
           } 
           temp.typeI = respJ.infor.typeI
           temp.typeR = infor.typeR
           this.setState({infor:temp})
+        }
+        else if(respJ.label === 'Other'){
+          if(stateConv === 'sizeadvisory'){
+            if(previousIntent === reply.Request.size['V2-customer']){
+              temp.V2 = -1
+              temp.typeI = 'V2'
+            }
+            else if(previousIntent === reply.Request.size['weight-customer']){
+              temp.weight = -1
+              temp.typeI = 'weight'
+            }
+            else if(previousIntent === reply.Request.size['height-customer']){
+              temp.height = -1
+              temp.typeI = 'height'
+            }
+          }
+          if(stateConv === 'order'){
+            if(previousIntent === reply.Order.phone){
+              temp.phone = respJ.infor.phone
+              temp.typeI = 'phone'
+            }
+          }
+          temp.typeR = respJ.infor.typeR
+          this.setState({infor:temp})
+        }
+        else{
+          this.setState({infor:temp})
+        }
+        if(stateConv === 'order' || respJ.label === 'Order'){
+          let temporder = order
+          if(respJ.infor.name !== '' && order.name_product === ''){
+            temporder.name_product = respJ.infor.name
+          }
+          else if(respJ.infor.name === '' && infor.name !== ''){
+            temporder.name_product = infor.name
+          }
+          if(respJ.infor.addr !== '' && order.addr === '' ){
+            temporder.addr = respJ.infor.addr
+          }
+          if(respJ.infor.phone !== '' && order.phone === ''){
+            temporder.phone = respJ.infor.phone
+          }
+          if(respJ.infor.amount !== '' && order.amount === ''){
+            temporder.amount = respJ.infor.amount
+          }
+          if(respJ.infor.Id_cus !== '' && order.name_cus === ''){
+            temporder.name_cus = respJ.infor.Id_cus
+          }
+          if(respJ.infor.size !== '' && order.size === ''){
+            temporder.size = respJ.infor.size
+          }
+          else if (respJ.infor.size === '' && this.state.sizeR !== ''){
+            temporder.size = this.state.sizeR 
+          }
+          this.setState({order: temporder},() => {
+            console.log(this.state.order)
+          })
+        }
+        if(respJ.label === 'Order'){
+          this.setState({stateConv: 'order'})
         }
       })
 
@@ -119,9 +189,9 @@ class App extends Component {
     });
     const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
     await fetch(url,reqOpt)
-    .then((resp)=>resp.json())
-    .then((respJ)=> {
-      this.setState({infor:respJ.infor}, ()=>{
+    .then((resp) => resp.json())
+    .then((respJ) => {
+      this.setState({infor:respJ.infor}, () => {
         console.log(respJ.infor)
       })
     });
@@ -138,26 +208,27 @@ class App extends Component {
     });
     const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
     await fetch(url, reqOpt)
-    .then((resp)=>resp.json())
-    .then((respJ)=> {
+    .then((resp) => resp.json())
+    .then((respJ) => {
       this.setState({conversation: []})
     });
   };
-  consultation(jeansize,weight,v2){
-    if(weight>=40 && weight <= 56){
-      if(weight <=47){
+
+  consultation(height,weight,v2){
+    if(weight >= 40 && weight <= 56){
+      if(weight <= 47){
         return 'S'
       }
-      else if(weight>=53){
+      else if(weight >= 53){
         return 'L'
       }
       return 'M'
     }
-    else if (v2>=55 && v2<=74){
-      if(v2 <=66){
+    else if (v2 >= 55 && v2 <= 74){
+      if(v2 <= 66){
         return 'S'
       }
-      else if(v2>=71){
+      else if(v2 >= 71){
         return 'L'
       }
       return 'M'
@@ -171,8 +242,10 @@ class App extends Component {
         <header className = "App-header">
         <ThemeProvider theme = {this.theme}>
           <ChatBot
-            headerTitle = 'Intent chatbot'
+            headerTitle = 'TMT chatbot'
             botDelay = {1000}
+            width = {'500px'}
+            height = {'650px'}
             steps = {[
               {
                 id: 'start',
@@ -182,7 +255,7 @@ class App extends Component {
                   newcon.push('Bot: Welcome!')
                   this.setState({conversation:newcon})
                   this.predict('')
-                  return 'Hello, mình là chatbot nè!'
+                  return reply['Hello-Connect']
                 },
                 trigger: 'user',
               },
@@ -220,59 +293,66 @@ class App extends Component {
                 id: 'reply',
                 message:()=>{
                   var mess = "";
-                  const {conversation,infor,stateConv,order} = this.state;
+                  const {conversation,infor,stateConv,order,sizeR} = this.state;
                   var prediction = this.state.prediction;
                   var newcon = conversation;
                   console.log(prediction)
                   console.log(stateConv)
+                  console.log(infor)
+                  if(prediction === 'Other'){
+                    mess = reply.Other
+                    if(stateConv === 'sizeadvisory'){
+                      prediction = 'Inform'
+                    }
+                    else if(infor.typeR === 'product_image'){
+                      prediction = 'Request'
+                    }
+                    else if(infor.typeI === 'phone'){
+                      prediction = 'Order'
+                    }
+                  }
                   if (prediction === 'Inform') {
                     mess = reply.Inform
                     console.log(infor)
-                    if(stateConv === 'sizeadvisory'){
+                    if(infor.name === ''){
+                      mess = reply.Request.not_ID_product
+                    }
+                    else if(stateConv === 'sizeadvisory'){
                       console.log(infor.typeI)
-                      if(infor.typeI === 'size'){
-                        mess = 'Vậy bạn lấy size ' + infor.size + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
-                        if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
-                          mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                      let t = this.consultation(infor.height,infor.weight,infor.V2);
+                      if(t !== 'Nonesize'){
+                        mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                        if(!infor.size.includes(t)){
+                          mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                         }
                       }
-                      else if(infor.typeI === 'height'){
-                        if(infor.weight === ''){
-                          mess = 'Bạn cho mình xin cân nặng nha'
-                        }
-                        else{
-                          mess = reply.Request.size['V2-customer']
-                        }
+
+                      if(infor.ID_product === ''){
+                        prediction = 'Request'
                       }
-                      else if(infor.typeI === 'weight'){
-                        let t = this.consultation(0,infor.weight,infor.V2);
-                        if(t !== 'Nonesize'){
-                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                      else if(sizeR.includes('None')){
+                        mess = 'Xin lỗi bạn bên mình hết size ' + sizeR.slice(-1) + ' rồi nha.'
+                      }
+                      else if(infor.typeI === 'size'){
+                        mess = reply.Request.sizeadvisory
+                      }
+                      else{
+                        if (infor.height === ''){
+                          mess = reply.Request.size['height-customer']
                         }
                         else if(infor.V2 === ''){
                           mess = reply.Request.size['V2-customer']
                         }
-                      }
-                      else if (infor.typeI === 'V2'){
-                        let t = this.consultation(0,infor.weight,infor.V2);
-                        if(t !== 'Nonesize'){
+                        else if(infor.weight === ''){
+                          mess = reply.Request.size['weight-customer']
+                        }
+                        else if(t !== 'Nonesize'){
                           mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                          if(!infor.size.includes(t)){
+                            mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
+                          }
                         }
-                        else{
-                          mess = reply.Request.size['not-found-size']
-                        }
-                      }
-                      else if(infor.typeI === 'heightweight'){
-                        let t = this.consultation(infor.height,infor.weight,infor.V2);
-                        if(t !== 'Nonesize'){
-                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
-                        }
-                        else if(infor.V2 === ''){
-                          mess = 'Bạn có số đo eo hông ạ?'
-                        } 
-                        else{
-                          mess = reply.Request.size['not-found-size'] 
-                        }
+                        else mess = reply.Request.size['not-found-size']
                       }
                     }
                     else if(stateConv === 'order'){
@@ -281,83 +361,72 @@ class App extends Component {
                     else if(stateConv === 'inforproduct'){
                       prediction = 'Request'
                     }
-                    else if(stateConv === 'start'){
-                      
-                    }
                   }
                   if(prediction === 'Request'){
                     console.log(infor.typeR)
-                    if(infor.typeR === 'amount_product'){
-                      if(infor.amount === 0){
-                        mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
-                      }
-                      else mess = infor.name + ' còn ' + String(infor.amount) + ' cái nha.'
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
+                    if (infor.typeR === 'Time'){
+                      mess = reply.Request.Time
+                    }
+                    else if (infor.typeR === 'address'){
+                      mess = reply.Request.address
+                    }
+                    else if (infor.typeR === 'shiping fee'){
+                      mess = reply.Request['shipping fee']
                     }
                     else if(infor.typeR === 'no-find-img'){
                       mess = reply.Request['no-find-img']
                     }
+                    else if (infor.typeR === 'ID_product'){
+                      mess = infor.name + ' còn hàng á. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn size cho bạn nha.'
+                      if(infor.name === ''){
+                        mess = reply.Request.not_found_product
+                      }
+                      else if(infor.amount === 0){
+                        mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
+                      }
+                    }
+                    else if(infor.name === ''){
+                      mess = reply.Request.not_ID_product
+                    }
+                    else if(infor.typeR === 'amount_product'){
+                      if(infor.amount === 0){
+                        mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
+                      }
+                      else mess = infor.name + ' còn hàng nha. Bạn cho mình xin số đo mình tư vấn size cho bạn nha.'
+                    }
                     else if (infor.typeR === 'size'){
                       mess = infor.name + ' còn size ' + infor.size + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
-                      if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
-                        mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
-                      }
-                      if((infor.size).includes('None')){
-                        if(!['m','l','s','M','L','S'].includes((infor.size).slice(-1))){
-                          mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
-                        }
-                        else mess = infor.name + ' hết size ' + (infor.size).slice(-1) + ' rồi nha.'
-                       }
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
                       console.log(stateConv)
-                      if(stateConv === 'sizeadvisory'){
-                        if(infor.typeI === 'size'){
-                          mess = 'Vậy bạn lấy size ' + infor.size + ' nha, bạn ok thì cho mình xin địa chỉ + sđt mình chốt đơn cho bạn nha.'
-                          if(!['m','l','s','M','L','S'].some(i=>infor.size.includes(i))){
-                            mess = 'Bên mình chỉ cung cấp 3 size là M, L và S thôi nha.'
+                      if((sizeR).includes('None')){
+                        mess = infor.name + ' hết size ' + (sizeR).slice(-1) + ' rồi nha.'
+                      }
+                      else if(infor.amount === 0){
+                        mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
+                      }
+                      else if(stateConv === 'sizeadvisory'){
+                        let t = this.consultation(infor.height,infor.weight,infor.V2);
+                        if(t !== 'Nonesize'){
+                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
+                          if(!infor.size.includes(t)){
+                            mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                           }
                         }
-                        else if(infor.typeI === 'height'){
+                        else if(infor.typeI === 'size'){
+                          mess = reply.Request.sizeadvisory
+                          if(infor.size.includes('None')){
+                            mess = 'Xin lỗi bạn bên mình hết size ' + infor.size.slice(-1) + ' rồi nha.'
+                          }
+                        }
+                        else {
                           if(infor.weight === ''){
                             mess = reply.Request.size['weight-customer']
                           }
-                          else{
+                          else if (infor.height === ''){
+                            mess = reply.Request.size['height-customer']
+                          }
+                          else if (infor.V2 === ''){
                             mess = reply.Request.size['V2-customer']
                           }
-                        }
-                        else if(infor.typeI === 'weight'){
-                          let t = this.consultation(0,infor.weight,infor.V2);
-                          if(t !== 'Nonesize'){
-                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
-                          }
-                          else if(infor.V2 === ''){
-                            mess = reply.Request.size['V2-customer']
-                          }
-                        }
-                        else if (infor.typeI === 'V2'){
-                          let t = this.consultation(0,infor.weight,infor.V2);
-                          if(t !== 'Nonesize'){
-                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
-                          }
-                          else{
-                            mess = reply.Request.size['not-found-size']
-                          }
-                          if(infor.weight === ''){
-                            mess = reply.Request.size['weight-customer']
-                          }
-                        }
-                        else if(infor.typeI === 'heightweight'){
-                          let t = this.consultation(0,infor.weight,infor.V2);
-                          if(t !== 'Nonesize'){
-                            mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
-                          }
-                          else if(infor.V2 === ''){
-                            mess = reply.Request.size['V2-customer']
-                          } 
                           else{
                             mess = reply.Request.size['not-found-size'] 
                           }
@@ -366,73 +435,49 @@ class App extends Component {
                     }
                     else if (infor.typeR === 'material_product'){
                       mess = 'Dạ ' + infor.name + ' chất ' + infor.material + ' nha.'
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
-                    }
-                    else if (infor.typeR === 'shiping fee'){
-                      mess = reply.Request['shipping fee']
                     }
                     else if (infor.typeR === 'product_image'){
-                      mess = 'http://localhost:8000' + infor.url[0]
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
+                      mess = 'Dạ đây ạ.'
                     }
                     else if (infor.typeR === 'color_product'){
                       mess = infor.name + ' còn màu ' + infor.color + ' nha.'
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
                     }
                     else if (infor.typeR === 'cost_product'){
                       mess = infor.name + ' có giá 380k giảm còn 195k nha.'
-                      if(infor.name === ''){
-                        mess = reply.Request.not_ID_product
-                      }
-                    }
-                    else if (infor.typeR === 'ID_product'){
-                      mess = infor.name + ' còn ' + String(infor.amount) + ' cái. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn thêm nha.'
-                      if(infor.name === ''){
-                        mess = reply.Request.not_found_product
-                      }
-                    }
-                    else if (infor.typeR === 'Time'){
-                      mess = reply.Request.Time
-                    }
-                    else if (infor.typeR === 'address'){
-                      mess = reply.Request.address
                     }
                     else {
-                      mess = 'Để mình check thử nha'
+                      mess = reply.Other
                     }
                   }
                   if (prediction === 'Order'){
-                    this.setState({stateConv: 'order'})
-                    if(order.name_product === ''){
+                    if(infor.name === ''){
                       mess = reply.Request.not_ID_product
                     }
-                    else if(order.color === ''){
-                      mess = 'Bạn lấy màu gì á?'
+                    else if(infor.amount === 0){
+                      mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
+                    }
+                    else if(order.name_product === ''){
+                      mess = reply.Order.ID_product
                     }
                     else if(order.size === ''){
-                      mess = 'Bạn lấy size nào á?'
+                      mess = reply.Order.size
                     }
                     else if(order.amount === ''){
-                      mess = 'Bạn lấy mấy cái á?'
-                    }
-                    else if(order.name === ''){
-                      mess = 'Bạn cho mình xin tên nha.'
-                    }
-                    else if(order.addr === ''){
-                      mess = 'Bạn cho mình xin địa chỉ cụ thể nha.'
+                      mess = reply.Order.amount
                     }
                     else if(order.phone === ''){
-                      mess = 'Bạn cho mình xin số điện thoại để shipper gọi cho bạn nha.'
+                      mess = reply.Order.phone
+                    }
+                    else if(order.addr === ''){
+                      mess = reply.Order.address
+                    }
+                    else if(order.name === ''){
+                      mess = reply.Order.name
                     }
                     else {
-                      mess = 'Bạn kiểm tra lại thông tin một lần nữa nha'
+                      mess = reply.Order.check
                     }
+                    this.setState({stateConv: 'order'})
                   }
                   if (prediction === 'Changing'){
                     mess = reply.Changing
@@ -445,11 +490,21 @@ class App extends Component {
                   if (prediction === 'feedback'){
                     mess = reply.Feedback
                   }
-                  if (prediction === 'Hello'){
-                    mess = reply.Hello
+                  if (prediction === 'Hello' || prediction === 'Connect'){
+                    mess = reply['Hello-Connect']
                   }
-                  if (prediction === 'Connect'){
-                    mess = reply.Connect
+                  if(prediction === 'OK'){
+                    mess = reply.OK
+                    if(stateConv === 'sizeadvisory' && this.state.previousIntent !== reply.Request.size['not-found-size']){
+                      this.setState({stateConv:'order'})
+                      console.log(infor)
+                      mess = 'Bạn ok thì cho mình xin tên + sđt + địa chỉ mình chốt đơn cho bạn nha'
+                    }
+                    else if(stateConv === 'order'){
+                      if(this.state.previousIntent === 'doneOrder'){
+                        mess = reply.Done
+                      }
+                    }
                   }
                   if (prediction === 'Done'){
                     mess = reply.Done
@@ -458,42 +513,74 @@ class App extends Component {
                       'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
                       'name':'','url': '','typeI':'','typeR': ''
                     }})
+                    this.setState({sizeR: ''})
+                    this.setState({conversation: ''})
+                    this.setState({previousIntent: ''})
                     newcon.push('Bot: ' + mess)
                     this.conversationUpdate(newcon)
-                  }
-                  if(prediction === 'OK'){
-                    mess = reply.OK
-                    if(stateConv === 'sizeadvisory'){
-                      this.setState({stateConv:'order'})
-                      console.log(infor)
-                      mess = 'Bạn cho mình xin tên + sđt + địa chỉ mình ship cho bạn nha'
-                    }
-                    else if(stateConv === 'order'){
-
-                    }
-                  }
-                  if(prediction === 'Other'){
-                    mess = reply.Other
+                    return mess
                   }
                   newcon.push('Bot: ' + mess)
                   this.setState({conversation: newcon})
+                  this.setState({previousIntent: mess})
                   return mess
-                } ,
+                },
                 trigger: (value)=>{
                   console.log(value.steps.reply.message)
                   //return 'order'
+                  if(value.steps.reply.message === reply.Request.sizeadvisory){
+                    return 'sizetable'
+                  }
+                  if(value.steps.reply.message === reply.Request.size['not-found-size']){
+
+                  }
+                  if(value.steps.reply.message === 'Dạ đây ạ.'){
+                    return 'imageProduct'
+                  }
+                  if(value.steps.reply.message === reply.Order.check){
+                    return 'ordername'
+                  }
                   return 'user'
                 }
               },
               {
-                id: 'order',
-                message: 'ho va ten',
-                trigger: 'order2'
+                id: 'sizetable',
+                message: reply.sizeTable,
+                trigger: 'user'
               },
               {
-                id: 'order2',
-                message: 'so dien thoai',
-                trigger:'user'
+                id: 'imageProduct',
+                message: () => {
+                  const {infor} = this.state;
+                  let len = infor.url.length
+                  return 'http://localhost:8000' + infor.url[Math.floor(Math.random() * len)]
+                },
+                trigger: 'user'
+              },
+              {
+                id: 'ordername',
+                message:() => {
+                  const {order} = this.state;
+                  return 'Tên người nhận: ' + order.name_cus
+                },
+                trigger: 'orderphone-address'
+              },
+              {
+                id: 'orderphone-address',
+                message: () => {
+                  const {order} = this.state;
+                  return 'Sđt: ' + order.phone + '. Địa chỉ: ' + order.addr + '.'
+                },
+                trigger: 'product'
+              },
+              {
+                id: 'product',
+                message: () => {
+                  const {order} = this.state;
+                  this.setState({previousIntent: 'doneOrder'})
+                  return String(order.amount) + ' ' + order.name_product + ' size ' + order.size + '. Tổng cộng đơn hàng là ' + order.price + ' nha.'
+                },
+                trigger: 'user'
               }
             ]}
           />
@@ -503,5 +590,4 @@ class App extends Component {
     );
   }
 }
-
 export default App;

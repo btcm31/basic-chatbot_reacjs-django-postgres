@@ -2,7 +2,7 @@ from django.db import models
 
 class Conversation(models.Model):
     content = models.TextField()
-    num = models.IntegerField()
+    num = models.PositiveIntegerField()
 
     def __str__(self):
         return f"Conversation {self.num}"
@@ -11,7 +11,8 @@ class Product(models.Model):
     product_name = models.CharField(max_length = 255)
     material = models.CharField(max_length = 255)
     amount = models.PositiveIntegerField()
-
+    price = models.PositiveIntegerField()
+    
     def __str__(self):
         return self.product_name
 
@@ -46,13 +47,14 @@ class ColorProduct(models.Model):
 
 class Order(models.Model):
     customer_name = models.CharField(max_length = 255)
-    material = models.CharField(max_length = 255)
+    price = models.PositiveIntegerField()
     size = models.CharField(max_length = 255)
-    amount = models.IntegerField()
+    amount = models.PositiveIntegerField()
     color = models.CharField(max_length = 255)
     product_name = models.CharField(max_length = 255)
     phone = models.CharField(max_length=50)
     address = models.CharField(max_length=50)
 
     def __str__(self):
-        return f"{self.customer_name} - {self.product_name}"
+        k = str(self.amount)
+        return f"{self.customer_name}/{k}-{self.product_name}-{self.size}"

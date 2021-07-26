@@ -7,9 +7,15 @@ const Header = styled.div`
   color: ${({ theme }) => theme.headerFontColor};
   display: flex;
   fill: ${({ theme }) => theme.headerFontColor};
-  height: 56px;
+  height: 70px;
   justify-content: space-between;
   padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: ${props => (props.invalid ? '0' : '2px solid #696969')};
+  border-top: ${props => (props.invalid ? '0' : '3px solid #696969')};
+  box-shadow: ${props => (props.invalid ? 'inset 0 0 2px #E53935' : 'none')};
+  box-sizing: border-box;
 `;
 
 Header.defaultProps = {

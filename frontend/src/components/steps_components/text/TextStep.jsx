@@ -38,6 +38,9 @@ class TextStep extends Component {
       message = message[0]
       return message ? message.replace(/{previousValue}/g, previousValue) : '';
     }
+    if(message.split("/").length>2){
+      return message;
+    }
     return message ? this.capitalizeFirstLetter(message.replace(/{previousValue}/g, previousValue)) : '';
   };
 

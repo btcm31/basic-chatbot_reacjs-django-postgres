@@ -10,17 +10,17 @@ const Input = styled.input`
       : ''};
   border: 0;
   border-radius: 0;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-  border-top: ${props => (props.invalid ? '0' : '1px solid #eee')};
+  border-top: ${props => (props.invalid ? '0' : '2px solid #696969')};
+  border-bottom: ${props => (props.invalid ? '0' : '3px solid #696969')};
   box-shadow: ${props => (props.invalid ? 'inset 0 0 2px #E53935' : 'none')};
   box-sizing: border-box;
   color: ${props => (props.invalid ? '#E53935' : '')};
-  font-size: 16px;
+  font-size: 18px;
   opacity: ${props => (props.disabled && !props.invalid ? '.5' : '1')};
   outline: none;
   padding: ${props => (props.hasButton ? '16px 52px 16px 10px' : '16px 10px')};
   width: 100%;
+  height: 70px;
   -webkit-appearance: none;
 
   &:disabled {

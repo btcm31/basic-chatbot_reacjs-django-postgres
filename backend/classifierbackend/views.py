@@ -7,15 +7,18 @@ import numpy as np
 import regex as re
 import bogo
 from unidecode import unidecode
-from .models import Conversation, Product, ImageProduct, ColorProduct, SizeProduct
+from .models import Conversation, Product, ImageProduct, ColorProduct, SizeProduct, Order
 from PIL import Image, ImageChops
 from io import BytesIO
 import base64
+from tensorflow.keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
+from tensorflow.keras.applications import imagenet_utils
+
 
 #Load model
-model = tf.keras.models.load_model('./bestmodel')
-token = pickle.load(open('./bestmodel/saved_tokenizer.pickle','rb'))
-label = pickle.load(open('./bestmodel/saved_label.pickle','rb'))
+model = tf.keras.models.load_model('./intentmodel')
+token = pickle.load(open('./intentmodel/saved_tokenizer.pickle','rb'))
+label = pickle.load(open('./intentmodel/saved_label.pickle','rb'))
 #Request model 
 modelRequest = tf.keras.models.load_model('./requestmodel')
 tokenRequest = pickle.load(open('./requestmodel/saved_tokenizer.pickle','rb'))
@@ -24,6 +27,9 @@ labelRequest = pickle.load(open('./requestmodel/saved_label.pickle','rb'))
 modelInform = tf.keras.models.load_model('./informmodel')
 tokenInform = pickle.load(open('./informmodel/saved_tokenizer.pickle','rb'))
 labelInform = pickle.load(open('./informmodel/saved_label.pickle','rb'))
+#Image model
+modelImg = tf.keras.models.load_model('./img-pretrainedmodel')
+labelImg = pickle.load(open('./img-pretrainedmodel/saved_label.pickle','rb'))
 
 
 bang_nguyen_am = [['a', 'à', 'á', 'ả', 'ã', 'ạ', 'a'],
@@ -171,10 +177,10 @@ def text_preprocess(document):
 def extractHeight(x):
     if re.search(r'\d{3}',x):
         return int(x)
-    elif re.search(r'[\w]met',x):
-        return int(re.sub(r'met','',x))
-    elif re.search(r'met',x):
-        return 100 + int((re.sub(r'met','',x)+'0')[:2])
+    elif re.search(r'[\w]met|[\w]mét',x):
+        return int((re.sub(r'met|mét','',x) + '0')[:3])
+    elif re.search(r'met\s*|mét\s*',x):
+        return 100 + int((re.sub(r'met\s*|mét\s*','',x)+'0')[:2])
     elif re.search(r'm\d{1,2}',x):
         return 100 + int((re.sub(r'[\d]*m','',x)+'0')[:2])
     elif re.search(r'\d[\.]\d{1,2}',x):
@@ -188,8 +194,8 @@ def predictJson(request):
     amount = ""
     color = []
     name_pro = ""
-    typeRequest = ""
-    lbInform = ""
+    lbRequest = "ID_product"
+    lbInform = "ID_product"
     weight = ""
     height = ""
     v2 = ""
@@ -205,8 +211,8 @@ def predictJson(request):
     lb = label[np.argmax(pre)]
 
     preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
-    lbRe = labelRequest[np.argmax(preTypeR)].split(",")[-1]
-    typeRequest = lbRe
+    lbRe = labelRequest[np.argmax(preTypeR)].split(",")
+    lbRequest = lbRe[-1]
 
     typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
     lstlb = labelInform[np.argmax(typeInform)].split(",")
@@ -214,12 +220,13 @@ def predictJson(request):
 
     '''Extract entity'''
     lst = []
-    if lbInform == "size":
-        try:
-            temp = re.findall(r'(size|sz|sai)\s*(s|m|l|S|M|L)\s',text)
-            size = [i[1] for i in temp]
-        except:
-            pass
+    try:
+        temp = re.findall(r'(size|sz|sai|sie|siz)\s*(s|m|l|S|M|L)',text)
+        if not temp:
+            temp = re.findall(r'(mặc|mac|măc|mạc)\s*(s|m|l|S|M|L)\s',text)
+        size = [i[1].upper() for i in temp]
+    except:
+        pass
     if lbInform == "V2":
         try:
             v2 = int(re.findall(r'\d{2,3}',text)[0])
@@ -227,89 +234,84 @@ def predictJson(request):
             pass
     if re.search('height',lbInform):
         try:
-            temp = re.findall(r"(\d*(m|met|\.)\d{1,2}|\d{3})",text)
+            temp = re.findall(r"(\d*(m|met|mét|\.)\s*\d{1,2}|\d{3})",text)
             height = extractHeight(temp[0][0]) if len(temp)>0 else ""
         except:
             pass
     if re.search('weight',lbInform):
         try:
-            temp = re.findall(r"(\d{2,3}(k\w))",text)
-            weight = int(re.sub(r'k\w*','',temp[0][0]))
+            temp = re.findall(r"(\d{2,3}[\s\D]{0,1}(k\w))",text)
+            weight = int(re.sub(r'[\s\D]{0,1}(k\w)','',temp[0][0]))
         except:
             pass
     if lbInform == 'address':
         pass
-    if lbInform == 'phone':
-        try:
-            phone = re.findall(r'\d{10}',text)[0]
-        except:
-            pass
+    try:
+        phone = re.findall(r'\d{10}',text)[0]
+    except:
+        pass
     if lbInform == 'Id member':
         pass
     if lbInform == 'ID_product':
         pass
-    if lbInform == 'amount_product':
+    if lbInform == 'amount_product' or lb == 'Order':
         try:
-            amount = int(re.findall(r'\d+',text)[0])
+            amount = int(re.findall(r'\d{1,2}',text)[0])
         except:
             pass
     for pro in Product.objects.all():
         if unidecode(text_preprocess(pro.product_name)) in unidecode(text):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
-            size = [i.name for i in SizeProduct.objects.filter(product_id=pro.id)]
+            if lb != 'Order':
+                size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
             material = pro.material
-            amount = pro.amount
+            if lb != 'Order':
+                amount = pro.amount
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
             name_pro = pro.product_name
     return JsonResponse({'label':lb,
-                        'infor': {'size':','.join(set(size)).upper(),'weight':weight,'height':height,'V2':v2,
+                        'infor': {'size':",".join(set(size)),'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
+                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest}})
 def imgPredict(request):
     data = json.loads(request.body)
-    typeRequest = "Request"
+    try:
+        image_data = base64.b64decode(re.sub('^data:image/.+;base64,', '', data['img']))
+        imginput = Image.open(BytesIO(image_data)).resize((224,224))
+        imginput = img_to_array(imginput)
+        imginput = np.expand_dims(imginput, 0)
+        imginput = imagenet_utils.preprocess_input(imginput)
+        aug_test= ImageDataGenerator(rescale=1./255)
+        idx = np.argmax(modelImg.predict(aug_test.standardize(imginput)))
+        name_pro = ['Set vest nơ', 'Set cổ xéo', 'Set sơ mi cổ nơ', 'Set trắng nút', 'Set vest', 'Set đầm sơ mi trắng', 'Set Xanh', 'Sét vàng','Sét Đen Sẻ', 'Đầm Body Nút', 'Đầm body lưới', 'Đầm body nude ren', 'Đầm body vest', 'Đầm caro', 'Đầm caro cổ vest', 'Đầm nâu nút', 'Đầm nude xoắn', 'Đầm trắng 2 dây', 'Đầm trắng dập li', 'Đầm xám nút', 'Đần nude lưới'][idx]
+    except:
+        name_pro = 'no-find-img'
+
+    lbRequest = "ID_product"
     url_lst = []
     size = []
     material = ""
     amount = ""
     color = []
-    name_pro = ""
-    typeRequest = ""
-    lbInform = ""
+    lbInform = "ID_product"
     weight = ""
     height = ""
     v2 = ""
     phone = ""
     address = ""
     Id_cus = ""
-    if data['img'] != "":
-        exist = False
-        for img in ImageProduct.objects.all():
-            image_data = base64.b64decode(re.sub('^data:image/.+;base64,', '', data['img']))
-            imginput = Image.open(BytesIO(image_data))
-            try:
-                imgdb = Image.open(img.image)
-            except:
-                pass
-            try:
-                diff = ImageChops.difference(imginput, imgdb).getbbox()
-            except:
-                diff = True
-            if not diff:
-                url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=img.product.id)]
-                name_pro = img.product.product_name
-                size = [i.name for i in SizeProduct.objects.filter(product_id=img.product.id)]
-                material = img.product.material
-                amount = img.product.amount
-                color = [i.name for i in ColorProduct.objects.filter(product_id=img.product.id)]
-                exist = True
-                break
-        if not exist:
-            typeRequest = "no-find-img"
-    return JsonResponse({'infor': {'size':','.join(set(size)).upper(),'weight':weight,'height':height,'V2':v2,
+    for pro in Product.objects.all():
+        if unidecode(pro.product_name) == unidecode(name_pro):
+            url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
+            size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
+            material = pro.material
+            amount = pro.amount
+            color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
+    return JsonResponse({'infor': {'size': ",".join(set(size)),
+                                'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),
                                 'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': typeRequest}})
+                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest}})
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)
@@ -319,4 +321,5 @@ def conversation(request):
     return JsonResponse({'conv': conv})
 
 def order(request):
-    pass
+    data = json.loads(request.body)
+    conv = data['order'].encode().decode('utf-8')

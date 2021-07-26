@@ -27,7 +27,7 @@ import Axios from 'axios';
 const UploadComponent = props => (
   <form>
       <ImageUploader
-          buttonStyles ={{background:'#EF6C00'}}
+          buttonStyles ={{background:'rgba(141, 131, 156, 0.667)'}}
           key="image-uploader"
           withIcon={false}
           buttonText = {<GrImage/>}
@@ -88,7 +88,7 @@ class ChatBot extends Component {
       cache,
       cacheName,
       customDelay,
-      enableMobileAutoFocus,
+      //enableMobileAutoFocus,
       userAvatar,
       userDelay
     } = this.props;
@@ -157,11 +157,12 @@ class ChatBot extends Component {
       () => {
         // focus input if last step cached is a user step
         this.setState({ disabled: false }, () => {
-          if (enableMobileAutoFocus || !isMobile()) {
+          this.input.focus();
+          /* if (enableMobileAutoFocus || !isMobile()) {
             if (this.input) {
               this.input.focus();
             }
-          }
+          } */
         });
       }
     );
@@ -340,6 +341,7 @@ class ChatBot extends Component {
             }
           });
         } else {
+          this.input.focus();
           renderedSteps.push(nextStep);
           previousSteps.push(nextStep);
 
@@ -729,7 +731,7 @@ class ChatBot extends Component {
             {renderedSteps.map(this.renderStep)}
           </Content>
           <Footer className="rsc-footer" style={footerStyle}>
-              {!currentStep.hideInput && (
+              {(
                 <div>
                   <UploadComponent onImage={this.onImage} url={this.state.url} />
                   {
@@ -748,7 +750,7 @@ class ChatBot extends Component {
                     value={inputValue}
                     floating={floating}
                     invalid={inputInvalid}
-                    disabled={disabled}
+                    disabled={false}///
                     hasButton={!hideSubmitButton}
                     {...inputAttributesOverride}
                   />
@@ -766,7 +768,7 @@ class ChatBot extends Component {
                   style={submitButtonStyle}
                   onClick={this.handleSubmitButton}
                   invalid={inputInvalid}
-                  disabled={disabled}
+                  disabled={false}
                   speaking={speaking}
                 >
                   {icon}
