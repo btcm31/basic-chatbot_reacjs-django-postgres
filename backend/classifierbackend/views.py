@@ -202,10 +202,13 @@ def predictJson(request):
     phone = ""
     address = ""
     Id_cus = ""
-
-    data = json.loads(request.body)
-    text = data['text'].encode().decode('utf-8')
-    text = text_preprocess(text)
+    try:
+        data = json.loads(request.body)
+        text = data['text'].encode().decode('utf-8')
+        text = text_preprocess(text)
+    except KeyError:
+        text = ""
+        print(data)
 
     pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
     lb = label[np.argmax(pre)]
@@ -283,6 +286,7 @@ def imgPredict(request):
         imginput = imagenet_utils.preprocess_input(imginput)
         aug_test= ImageDataGenerator(rescale=1./255)
         idx = np.argmax(modelImg.predict(aug_test.standardize(imginput)))
+        print(np.max(modelImg.predict(aug_test.standardize(imginput))))
         name_pro = ['Set vest nơ', 'Set cổ xéo', 'Set sơ mi cổ nơ', 'Set trắng nút', 'Set vest', 'Set đầm sơ mi trắng', 'Set Xanh', 'Sét vàng','Sét Đen Sẻ', 'Đầm Body Nút', 'Đầm body lưới', 'Đầm body nude ren', 'Đầm body vest', 'Đầm caro', 'Đầm caro cổ vest', 'Đầm nâu nút', 'Đầm nude xoắn', 'Đầm trắng 2 dây', 'Đầm trắng dập li', 'Đầm xám nút', 'Đần nude lưới'][idx]
     except:
         name_pro = 'no-find-img'
@@ -307,7 +311,7 @@ def imgPredict(request):
             material = pro.material
             amount = pro.amount
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
-    return JsonResponse({'infor': {'size': ",".join(set(size)),
+    return JsonResponse({'label':'Request','infor': {'size': ",".join(set(size)),
                                 'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),
                                 'color':','.join(set(color)).lower(),'amount':amount,

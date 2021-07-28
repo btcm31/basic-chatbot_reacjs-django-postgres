@@ -191,8 +191,16 @@ class App extends Component {
     await fetch(url,reqOpt)
     .then((resp) => resp.json())
     .then((respJ) => {
-      this.setState({infor:respJ.infor}, () => {
-        console.log(respJ.infor)
+      const { prediction, infor } = this.state;
+      let temp = respJ.infor;
+
+      if(infor.typeR !== ''){
+        temp.typeR = infor.typeR;
+      }
+      this.setState({infor:temp}, () => {
+        console.log(infor)
+        if(prediction)
+          this.setState({prediction:respJ.label})
       })
     });
   };
@@ -243,7 +251,8 @@ class App extends Component {
         <ThemeProvider theme = {this.theme}>
           <ChatBot
             headerTitle = 'TMT chatbot'
-            botDelay = {1000}
+            botDelay = {4000}
+            userDelay = {2000}
             width = {'500px'}
             height = {'650px'}
             steps = {[
@@ -263,17 +272,19 @@ class App extends Component {
                 id: 'user',
                 user: true,
                 trigger: (value)=>{
+                  console.log(value.value)
                   const {conversation} = this.state;
                   var newcon = conversation;  
                   if(Array.isArray(value.value)){
                     newcon.push('User: ImageURL')
                     this.setState({conversation: newcon})
                     this.predictImg(value.value[0])
-                    return 'user'
                   }
-                  newcon.push('User: ' + value.value)
-                  this.setState({conversation: newcon})
-                  this.predict(value.value)
+                  else{
+                    newcon.push('User: ' + value.value)
+                    this.setState({conversation: newcon})
+                    this.predict(value.value)
+                  }
                   return 'bot'
                 }
               },
@@ -526,7 +537,6 @@ class App extends Component {
                   return mess
                 },
                 trigger: (value)=>{
-                  console.log(value.steps.reply.message)
                   //return 'order'
                   if(value.steps.reply.message === reply.Request.sizeadvisory){
                     return 'sizetable'

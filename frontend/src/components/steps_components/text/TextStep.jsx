@@ -8,25 +8,26 @@ import TextStepContainer from './TextStepContainer';
 
 class TextStep extends Component {
   /* istanbul ignore next */
-  state = {
-    loading: true,
-    uploading1:false,
-    url:''
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      loading: true,
+    };
+  }
 
   componentDidMount() {
-    const { step, speak, previousValue, triggerNextStep } = this.props;
+    const { step, triggerNextStep, isFirst } = this.props;
     const { component, delay, waitAction } = step;
     const isComponentWatingUser = component && waitAction;
+    let a = isFirst && !step.user ? 0 : delay;
 
     setTimeout(() => {
       this.setState({ loading: false }, () => {
         if (!isComponentWatingUser && !step.rendered) {
           triggerNextStep();
         }
-        speak(step, previousValue);
       });
-    }, delay);
+    }, a);
   }
   capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1);
@@ -65,24 +66,19 @@ class TextStep extends Component {
       isLast,
       avatarStyle,
       bubbleStyle,
-      hideBotAvatar,
-      hideUserAvatar
     } = this.props;
     const { loading } = this.state;
-    const { avatar, user, botName,uploading } = step;
-
-    const showAvatar = user ? !hideUserAvatar : !hideBotAvatar;
+    const { avatar, user, botName, uploading } = step;
 
     const imageAltText = user ? "Your avatar" : `${botName}'s avatar`;
 
     return (
       <TextStepContainer className={`rsc-ts ${user ? 'rsc-ts-user' : 'rsc-ts-bot'}`} user={user}>
         <ImageContainer className="rsc-ts-image-container" user={user}>
-          { 1 && showAvatar && this.renderMessage()!=='GypERR!sackError:Col o id nyVisualStuio nstallationtouse' && (
+          {this.renderMessage()!=='GypERR!sackError:Col o id nyVisualStuio nstallationtouse' && (
             <Image
               className="rsc-ts-image"
               style={avatarStyle}
-              showAvatar={showAvatar}
               user={user}
               src={avatar}
               alt={imageAltText}
@@ -116,8 +112,6 @@ TextStep.propTypes = {
   isFirst: PropTypes.bool.isRequired,
   isLast: PropTypes.bool.isRequired,
   bubbleStyle: PropTypes.objectOf(PropTypes.any).isRequired,
-  hideBotAvatar: PropTypes.bool.isRequired,
-  hideUserAvatar: PropTypes.bool.isRequired,
   previousStep: PropTypes.objectOf(PropTypes.any),
   previousValue: PropTypes.oneOfType([
     PropTypes.string,
@@ -126,7 +120,6 @@ TextStep.propTypes = {
     PropTypes.object,
     PropTypes.array
   ]),
-  speak: PropTypes.func,
   step: PropTypes.objectOf(PropTypes.any).isRequired,
   steps: PropTypes.objectOf(PropTypes.any),
   triggerNextStep: PropTypes.func.isRequired
@@ -135,7 +128,6 @@ TextStep.propTypes = {
 TextStep.defaultProps = {
   previousStep: {},
   previousValue: '',
-  speak: () => {},
   steps: {}
 };
 

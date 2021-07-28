@@ -9,7 +9,7 @@ class CustomStep extends Component {
   };
 
   componentDidMount() {
-    const { speak, step, previousValue, triggerNextStep } = this.props;
+    const { step, triggerNextStep } = this.props;
     const { delay, waitAction } = step;
 
     setTimeout(() => {
@@ -17,7 +17,6 @@ class CustomStep extends Component {
         if (!waitAction && !step.rendered) {
           triggerNextStep();
         }
-        speak(step, previousValue);
       });
     }, delay);
   }
@@ -55,7 +54,6 @@ CustomStep.propTypes = {
     PropTypes.object,
     PropTypes.array
   ]),
-  speak: PropTypes.func,
   step: PropTypes.objectOf(PropTypes.any).isRequired,
   steps: PropTypes.objectOf(PropTypes.any).isRequired,
   style: PropTypes.objectOf(PropTypes.any).isRequired,
@@ -63,7 +61,6 @@ CustomStep.propTypes = {
 };
 CustomStep.defaultProps = {
   previousValue: '',
-  speak: () => {}
 };
 
 export default CustomStep;

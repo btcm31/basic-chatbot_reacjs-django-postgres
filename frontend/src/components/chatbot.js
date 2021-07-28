@@ -16,10 +16,7 @@ import {
   Input,
   SubmitButton
 } from './components';
-import Recognition from './recognition';
-import { ChatIcon, CloseIcon, SubmitIcon, MicIcon } from './icons';
-import { isMobile } from './utils';
-import { speakFn } from './speechSynthesis';
+import { ChatIcon, CloseIcon, SubmitIcon } from './icons';
 import ImageUploader from 'react-images-upload';
 import { GrImage } from "react-icons/gr";
 import Axios from 'axios';
@@ -69,14 +66,11 @@ class ChatBot extends Component {
       opened: props.opened || !props.floating,
       inputValue: '',
       inputInvalid: false,
-      speaking: false,
       url: '',
+      typing:false,
       uploading:false,
-      recognitionEnable: props.recognitionEnable && Recognition.isSupported(),
       defaultUserSettings: {}
     };
-
-    this.speak = speakFn(props.speechSynthesis);
   }
 
   componentDidMount() {
@@ -88,12 +82,10 @@ class ChatBot extends Component {
       cache,
       cacheName,
       customDelay,
-      //enableMobileAutoFocus,
       userAvatar,
       userDelay
     } = this.props;
     const chatSteps = {};
-
     const defaultBotSettings = { delay: botDelay, avatar: botAvatar, botName };
     const defaultUserSettings = {
       delay: userDelay,
@@ -128,18 +120,6 @@ class ChatBot extends Component {
       chatSteps[firstStep.id].message = firstStep.message;
     }
 
-    const { recognitionEnable } = this.state;
-    const { recognitionLang } = this.props;
-
-    if (recognitionEnable) {
-      this.recognition = new Recognition(
-        this.onRecognitionChange,
-        this.onRecognitionEnd,
-        this.onRecognitionStop,
-        recognitionLang
-      );
-    }
-
     this.supportsScrollBehavior = 'scrollBehavior' in document.documentElement.style;
 
     if (this.content) {
@@ -155,15 +135,9 @@ class ChatBot extends Component {
         steps: chatSteps
       },
       () => {
-        // focus input if last step cached is a user step
-        this.setState({ disabled: false }, () => {
+        this.setState({ disabled: false },()=>{
           this.input.focus();
-          /* if (enableMobileAutoFocus || !isMobile()) {
-            if (this.input) {
-              this.input.focus();
-            }
-          } */
-        });
+        })
       }
     );
 
@@ -188,13 +162,6 @@ class ChatBot extends Component {
     return state;
   }
 
-  componentWillUnmount() {
-    if (this.content) {
-      this.content.removeEventListener('DOMNodeInserted', this.onNodeInserted);
-      window.removeEventListener('resize', this.onResize);
-    }
-  }
-
   onNodeInserted = event => {
     const { currentTarget: target } = event;
     const { enableSmoothScroll } = this.props;
@@ -214,21 +181,17 @@ class ChatBot extends Component {
     this.content.scrollTop = this.content.scrollHeight;
   };
 
-  onRecognitionChange = value => {
-    this.setState({ inputValue: value });
-  };
-
-  onRecognitionEnd = () => {
-    this.setState({ speaking: false });
-    this.handleSubmitButton();
-  };
-
-  onRecognitionStop = () => {
-    this.setState({ speaking: false });
-  };
-
   onValueChange = event => {
     this.setState({ inputValue: event.target.value });
+    if((event.target.value).length >= 1){
+      this.setState({ typing: true });
+      if((event.target.value).length === 1){
+        this.triggerNextStep(999999999)}
+    }
+    else {
+      this.setState({ typing: false })
+      this.triggerNextStep(-999999999)
+    };
   };
 
   getTriggeredStep = (trigger, value) => {
@@ -261,10 +224,8 @@ class ChatBot extends Component {
   };
 
   triggerNextStep = data => {
-    const { enableMobileAutoFocus } = this.props;
     const { defaultUserSettings, previousSteps, renderedSteps, steps } = this.state;
-
-    let { currentStep, previousStep } = this.state;
+    let { currentStep, previousStep, typing, uploading } = this.state;
     const isEnd = currentStep.end;
 
     if (data && data.value) {
@@ -308,9 +269,10 @@ class ChatBot extends Component {
       if (currentStep.replace) {
         renderedSteps.pop();
       }
+      const trigger = (data===999999999 || typing || uploading) && data!==-999999999 ? 'user' : this.getTriggeredStep(currentStep.trigger, currentStep.value);
 
-      const trigger = this.getTriggeredStep(currentStep.trigger, currentStep.value);
       let nextStep = Object.assign({}, steps[trigger]);
+      
       if (nextStep.message) {
         nextStep.message = this.getStepMessage(nextStep.message);
       } else if (nextStep.update) {
@@ -325,26 +287,22 @@ class ChatBot extends Component {
           nextStep.trigger = updateStep.trigger;
         }
       }
-
       nextStep.key = Random(24);
 
       previousStep = currentStep;
       currentStep = nextStep;
 
       this.setState({ renderedSteps, currentStep, previousStep }, () => {
-        if (nextStep.user) {
-          this.setState({ disabled: false }, () => {
-            if (enableMobileAutoFocus || !isMobile()) {
-              if (this.input) {
-                this.input.focus();
-              }
-            }
-          });
-        } else {
-          this.input.focus();
+        this.setState({ disabled: false }, () => {
+          try {
+            this.input.focus();
+          } catch (error) {
+            
+          }  
+        });
+        if (!nextStep.user) {
           renderedSteps.push(nextStep);
           previousSteps.push(nextStep);
-
           this.setState({ renderedSteps, previousSteps });
         }
       });
@@ -379,9 +337,7 @@ class ChatBot extends Component {
           metadata
         };
       });
-
       const steps = [];
-
       for (let i = 0, len = previousSteps.length; i < len; i += 1) {
         const { id, message, value, metadata } = previousSteps[i];
 
@@ -392,9 +348,7 @@ class ChatBot extends Component {
           metadata
         };
       }
-
       const values = previousSteps.filter(step => step.value).map(step => step.value);
-
       handleEnd({ renderedSteps, steps, values });
     }
   };
@@ -438,7 +392,6 @@ class ChatBot extends Component {
     if (!hasMessage) {
       return true;
     }
-
     const isFirst = step.user !== lastStep.user;
     return isFirst;
   };
@@ -448,14 +401,13 @@ class ChatBot extends Component {
       this.submitUserMessage();
     }
   };
-  onUrlChange = (e) => {
-    console.log(e[0].name);
-  };
+
   onImage = async (failedImages, successImages) => {
     this.setState({ url: successImages});
-    this.setState({ uploading: true});
+    this.setState({ uploading: true},()=>{
+      this.triggerNextStep(999999999)
+    });
     try {
-        //console.log('successImages', successImages);
         const parts = successImages[0].split(';');
         const mime = parts[0].split(':')[1];
         const name = parts[1].split('=')[1];
@@ -467,23 +419,14 @@ class ChatBot extends Component {
         console.log('error in upload', error);
     }
   };
-  handleSubmitButton = () => {
-    const { speaking, recognitionEnable } = this.state;
 
-    if ((this.isInputValueEmpty() || speaking) && recognitionEnable) {
-      this.recognition.speak();
-      if (!speaking) {
-        this.setState({ speaking: true });
-      }
-      return;
-    }
-    this.submitUserMessage();
-  };
   submitUserMessage = () => {
     const { defaultUserSettings, inputValue,url, previousSteps, renderedSteps,uploading } = this.state;
     let { currentStep } = this.state;
     const isInvalid = currentStep.validator && this.checkInvalidInput();
-    if(!inputValue && !uploading && !url[0])
+    
+    this.setState({ typing: false })
+    if(this.isInputValueEmpty() && !url[0] && !uploading)
       return;
     if (!isInvalid) {
       var step = {};
@@ -512,20 +455,15 @@ class ChatBot extends Component {
           currentStep,
           renderedSteps,
           previousSteps,
+          inputValue: '',
           disabled: true,
-          inputValue: ''
-        },
-        () => {
-          if (this.input) {
-            this.input.blur();
-          }
-        }
-      );
+          typing: false,
+          uploading: false
+        });
     }
   };
 
   checkInvalidInput = () => {
-    const { enableMobileAutoFocus } = this.props;
     const { currentStep, inputValue } = this.state;
     const result = currentStep.validator(inputValue);
     const value = inputValue;
@@ -534,7 +472,6 @@ class ChatBot extends Component {
         {
           inputValue: result.toString(),
           inputInvalid: true,
-          disabled: true
         },
         () => {
           setTimeout(() => {
@@ -542,29 +479,17 @@ class ChatBot extends Component {
               {
                 inputValue: value,
                 inputInvalid: false,
-                disabled: false
-              },
-              () => {
-                if (enableMobileAutoFocus || !isMobile()) {
-                  if (this.input) {
-                    this.input.focus();
-                  }
-                }
-              }
-            );
+              });
           }, 2000);
         }
       );
-
       return true;
     }
-
     return false;
   };
 
   toggleChatBot = opened => {
     const { toggleFloating } = this.props;
-
     if (toggleFloating) {
       toggleFloating({ opened });
     } else {
@@ -573,15 +498,12 @@ class ChatBot extends Component {
   };
 
   renderStep = (step, index) => {
-    const { renderedSteps } = this.state;
+    const { renderedSteps, typing } = this.state;
     const {
       avatarStyle,
       bubbleStyle,
       bubbleOptionStyle,
       customStyle,
-      hideBotAvatar,
-      hideUserAvatar,
-      speechSynthesis
     } = this.props;
     const { options, component, asMessage } = step;
     const steps = this.generateRenderedStepsById();
@@ -591,7 +513,6 @@ class ChatBot extends Component {
       return (
         <CustomStep
           key={index}
-          speak={this.speak}
           step={step}
           steps={steps}
           style={customStyle}
@@ -619,15 +540,12 @@ class ChatBot extends Component {
         key={index}
         step={step}
         steps={steps}
-        speak={this.speak}
+        typing = {typing}
         previousStep={previousStep}
         previousValue={previousStep.value}
         triggerNextStep={this.triggerNextStep}
         avatarStyle={avatarStyle}
         bubbleStyle={bubbleStyle}
-        hideBotAvatar={hideBotAvatar}
-        hideUserAvatar={hideUserAvatar}
-        speechSynthesis={speechSynthesis}
         isFirst={this.isFirstPosition(step)}
         isLast={this.isLastPosition(step)}
       />
@@ -637,14 +555,12 @@ class ChatBot extends Component {
   render() {
     const {
       currentStep,
-      disabled,
       inputInvalid,
       inputValue,
       opened,
+      disabled,
       renderedSteps,
-      speaking,
       uploading,
-      recognitionEnable
     } = this.state;
     const {
       className,
@@ -657,12 +573,9 @@ class ChatBot extends Component {
       footerStyle,
       headerComponent,
       headerTitle,
-      hideHeader,
-      hideSubmitButton,
       inputStyle,
       placeholder,
       inputAttributes,
-      recognitionPlaceholder,
       style,
       submitButtonStyle,
       width,
@@ -684,18 +597,10 @@ class ChatBot extends Component {
     if (extraControl !== undefined) {
       customControl = React.cloneElement(extraControl, {
         disabled,
-        speaking,
         invalid: inputInvalid
       });
     }
-
-    const icon =
-      (this.isInputValueEmpty() || speaking) && recognitionEnable ? <MicIcon /> : <SubmitIcon/>;
-
-    const inputPlaceholder = speaking
-      ? recognitionPlaceholder
-      : currentStep.placeholder || placeholder;
-
+    const inputPlaceholder = currentStep.placeholder || placeholder;
     const inputAttributesOverride = currentStep.inputAttributes || inputAttributes;
     
     return (
@@ -719,7 +624,7 @@ class ChatBot extends Component {
           width={width}
           height={height}
         >
-          {!hideHeader && header}
+          {header}
           <Content
             className="rsc-content"
             ref={this.setContentRef}
@@ -731,29 +636,28 @@ class ChatBot extends Component {
             {renderedSteps.map(this.renderStep)}
           </Content>
           <Footer className="rsc-footer" style={footerStyle}>
-              {(
+              {!currentStep.hideInput && (
                 <div>
-                  <UploadComponent onImage={this.onImage} url={this.state.url} />
+                  <UploadComponent onImage={this.onImage} url={this.state.url}/>
                   {
                     uploading?
                     (
-                      <img src={this.state.url} width="8%" height="8%" alt="uploaded" />
+                      <img src={this.state.url} width="8%" height="8%" alt="uploaded"/>
                     ):(
                       <Input
-                    type="textarea"
-                    style={inputStyle}
-                    ref={this.setInputRef}
-                    className="rsc-input"
-                    placeholder={inputInvalid ? '' : inputPlaceholder}
-                    onKeyPress={this.handleKeyPress}
-                    onChange={this.onValueChange}
-                    value={inputValue}
-                    floating={floating}
-                    invalid={inputInvalid}
-                    disabled={false}///
-                    hasButton={!hideSubmitButton}
-                    {...inputAttributesOverride}
-                  />
+                        type="textarea"
+                        style={inputStyle}
+                        ref={this.setInputRef}
+                        className="rsc-input"
+                        placeholder={inputInvalid ? '' : inputPlaceholder}
+                        onKeyPress={this.handleKeyPress}
+                        onChange={this.onValueChange}
+                        value={inputValue}
+                        disabled={disabled}
+                        floating={floating}
+                        invalid={inputInvalid}
+                        {...inputAttributesOverride}
+                      />
                     )
                   }
                 </div>
@@ -761,17 +665,16 @@ class ChatBot extends Component {
             )}
             <div style={controlStyle} className="rsc-controls">
               {!currentStep.hideInput && !currentStep.hideExtraControl && customControl}
-              {!currentStep.hideInput && !hideSubmitButton && (
+              {!currentStep.hideInput && (
                 
                 <SubmitButton
                   className="rsc-submit-button"
                   style={submitButtonStyle}
-                  onClick={this.handleSubmitButton}
+                  onClick={this.submitUserMessage}
                   invalid={inputInvalid}
-                  disabled={false}
-                  speaking={speaking}
+                  disabled={disabled}
                 >
-                  {icon}
+                  <SubmitIcon/>
                 </SubmitButton>
               )}
             </div>
@@ -796,7 +699,6 @@ ChatBot.propTypes = {
   customDelay: PropTypes.number,
   customStyle: PropTypes.objectOf(PropTypes.any),
   controlStyle: PropTypes.objectOf(PropTypes.any),
-  enableMobileAutoFocus: PropTypes.bool,
   enableSmoothScroll: PropTypes.bool,
   extraControl: PropTypes.objectOf(PropTypes.element),
   floating: PropTypes.bool,
@@ -807,26 +709,11 @@ ChatBot.propTypes = {
   headerComponent: PropTypes.element,
   headerTitle: PropTypes.string,
   height: PropTypes.string,
-  hideBotAvatar: PropTypes.bool,
-  hideHeader: PropTypes.bool,
-  hideSubmitButton: PropTypes.bool,
-  hideUserAvatar: PropTypes.bool,
   inputAttributes: PropTypes.objectOf(PropTypes.any),
   inputStyle: PropTypes.objectOf(PropTypes.any),
   opened: PropTypes.bool,
   toggleFloating: PropTypes.func,
   placeholder: PropTypes.string,
-  recognitionEnable: PropTypes.bool,
-  recognitionLang: PropTypes.string,
-  recognitionPlaceholder: PropTypes.string,
-  speechSynthesis: PropTypes.shape({
-    enable: PropTypes.bool,
-    lang: PropTypes.string,
-    voice:
-      typeof window !== 'undefined'
-        ? PropTypes.instanceOf(window.SpeechSynthesisVoice)
-        : PropTypes.any
-  }),
   steps: PropTypes.arrayOf(PropTypes.object).isRequired,
   style: PropTypes.objectOf(PropTypes.any),
   submitButtonStyle: PropTypes.objectOf(PropTypes.any),
@@ -848,7 +735,6 @@ ChatBot.defaultProps = {
   customStyle: {},
   controlStyle: { position: 'absolute', right: '0', top: '0' },
   customDelay: 1000,
-  enableMobileAutoFocus: false,
   enableSmoothScroll: false,
   extraControl: undefined,
   floating: false,
@@ -859,22 +745,10 @@ ChatBot.defaultProps = {
   headerComponent: undefined,
   headerTitle: 'Chat',
   height: '520px',
-  hideBotAvatar: false,
-  hideHeader: false,
-  hideSubmitButton: false,
-  hideUserAvatar: false,
   inputStyle: {},
   opened: undefined,
   placeholder: 'Type the message ...',
   inputAttributes: {},
-  recognitionEnable: false,
-  recognitionLang: 'en',
-  recognitionPlaceholder: 'Listening ...',
-  speechSynthesis: {
-    enable: false,
-    lang: 'en',
-    voice: null
-  },
   style: {},
   submitButtonStyle: {},
   toggleFloating: undefined,
