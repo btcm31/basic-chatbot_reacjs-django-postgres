@@ -22,7 +22,7 @@ import { GrImage } from "react-icons/gr";
 import Axios from 'axios';
 
 const UploadComponent = props => (
-  <form>
+  <form onClick = {props.onClick}>
       <ImageUploader
           buttonStyles ={{background:'rgba(141, 131, 156, 0.667)'}}
           key="image-uploader"
@@ -180,17 +180,22 @@ class ChatBot extends Component {
   onResize = () => {
     this.content.scrollTop = this.content.scrollHeight;
   };
-
+  onClickImg = () => {
+    this.setState({ uploading: true},()=>{
+      this.triggerNextStep(999999999)
+    });
+  }
   onValueChange = event => {
     this.setState({ inputValue: event.target.value });
     if((event.target.value).length >= 1){
       this.setState({ typing: true });
-      if((event.target.value).length === 1){
-        this.triggerNextStep(999999999)}
     }
     else {
       this.setState({ typing: false })
-      this.triggerNextStep(-999999999)
+      setTimeout(() => {
+        if(this.isInputValueEmpty())
+          this.triggerNextStep(-999999999)
+      }, 5000);
     };
   };
 
@@ -269,8 +274,9 @@ class ChatBot extends Component {
       if (currentStep.replace) {
         renderedSteps.pop();
       }
-      const trigger = (data===999999999 || typing || uploading) && data!==-999999999 ? 'user' : this.getTriggeredStep(currentStep.trigger, currentStep.value);
-
+      const trigger = (typing || uploading || data === 999999999) && data!==-999999999 ? 'user' 
+                      : (data === -999999999 ? 'bot': this.getTriggeredStep(currentStep.trigger, currentStep.value));
+      
       let nextStep = Object.assign({}, steps[trigger]);
       
       if (nextStep.message) {
@@ -288,10 +294,10 @@ class ChatBot extends Component {
         }
       }
       nextStep.key = Random(24);
-
+      
       previousStep = currentStep;
       currentStep = nextStep;
-
+      
       this.setState({ renderedSteps, currentStep, previousStep }, () => {
         this.setState({ disabled: false }, () => {
           try {
@@ -381,7 +387,7 @@ class ChatBot extends Component {
   isFirstPosition = step => {
     const { renderedSteps } = this.state;
     const stepIndex = renderedSteps.map(s => s.key).indexOf(step.key);
-
+    
     if (stepIndex === 0) {
       return true;
     }
@@ -401,12 +407,10 @@ class ChatBot extends Component {
       this.submitUserMessage();
     }
   };
-
+  
   onImage = async (failedImages, successImages) => {
     this.setState({ url: successImages});
-    this.setState({ uploading: true},()=>{
-      this.triggerNextStep(999999999)
-    });
+    console.log('fail')
     try {
         const parts = successImages[0].split(';');
         const mime = parts[0].split(':')[1];
@@ -424,27 +428,27 @@ class ChatBot extends Component {
     const { defaultUserSettings, inputValue,url, previousSteps, renderedSteps,uploading } = this.state;
     let { currentStep } = this.state;
     const isInvalid = currentStep.validator && this.checkInvalidInput();
-    
-    this.setState({ typing: false })
-    if(this.isInputValueEmpty() && !url[0] && !uploading)
+    if(this.isInputValueEmpty() && !uploading)
       return;
+    else if(uploading&&!url[0]&&inputValue.length===0)
+      return
+    
     if (!isInvalid) {
       var step = {};
-      if(uploading){
+      if(uploading && url[0]){
         step = {
           message: url,
           value: url,
-          uploading: uploading
+          uploading: true
         };
       }
       else{
         step = {
           message: inputValue,
           value: inputValue,
-          uploading: uploading
+          uploading: false
         };
       }
-      this.setState({uploading:false})
       currentStep = Object.assign({}, defaultUserSettings, currentStep, step);
 
       renderedSteps.push(currentStep);
@@ -458,7 +462,8 @@ class ChatBot extends Component {
           inputValue: '',
           disabled: true,
           typing: false,
-          uploading: false
+          uploading: false,
+          url:''
         });
     }
   };
@@ -638,9 +643,9 @@ class ChatBot extends Component {
           <Footer className="rsc-footer" style={footerStyle}>
               {!currentStep.hideInput && (
                 <div>
-                  <UploadComponent onImage={this.onImage} url={this.state.url}/>
+                  <UploadComponent onImage={this.onImage} url={this.state.url} onClick = {this.onClickImg}/>
                   {
-                    uploading?
+                    uploading && this.state.url?
                     (
                       <img src={this.state.url} width="8%" height="8%" alt="uploaded"/>
                     ):(

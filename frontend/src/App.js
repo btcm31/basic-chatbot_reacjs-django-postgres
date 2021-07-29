@@ -55,11 +55,20 @@ class App extends Component {
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
         console.log(respJ.infor)
-        const {infor,order,stateConv,previousIntent} = this.state
+        const {infor,order,stateConv,previousIntent,conversation} = this.state
         let temp = infor
         this.setState({sizeR: respJ.infor.size})
         if(infor.name === "" && respJ.infor.name !== ""){
           temp = respJ.infor
+          if(infor.height !== '' && respJ.infor.height === ''){
+            temp.height = infor.height
+          }
+          if(infor.weight !== '' && respJ.infor.weight === ''){
+            temp.weight = infor.weight
+          }
+          if(infor.V2 !== '' && respJ.infor.V2 === ''){
+            temp.V2 = infor.V2
+          }
         }
         else if(infor.name !== "" && respJ.infor.name !== "" && respJ.infor.name !== infor.name){
           temp = respJ.infor
@@ -68,7 +77,6 @@ class App extends Component {
           temp.height = respJ.infor.height
         }
         else if(respJ.infor.typeI === 'weight' && respJ.infor.weight !== ''){
-          console.log('ok')
           temp.weight = respJ.infor.weight
         }
         else if(respJ.infor.typeI === 'heightweight'){
@@ -96,13 +104,23 @@ class App extends Component {
           temp.amount = respJ.infor.amount
         }
         if(respJ.label === 'Request'){
+          let check = false
           this.setState({stateConv: 'inforproduct'})
           if(respJ.infor.typeI !== 'size'&& respJ.infor.typeR === 'size'){
             this.setState({stateConv: 'sizeadvisory'})
           } 
+          else if(respJ.infor.typeR === 'size'){
+            let temp1 = conversation.slice(-2)
+            if(temp1[0].includes('User: ')){
+              this.setState({stateConv: 'sizeadvisory'})
+              infor.typeI = 'height'
+              check = true
+            }
+          }
           if(infor.typeR !== "no-find-img" && respJ.infor.name === ''){
             temp.typeR = respJ.infor.typeR
-            temp.typeI = respJ.infor.typeI
+            if(!check)
+              temp.typeI = respJ.infor.typeI
             this.setState({infor:temp})
           }
           else if(infor.name !== respJ.infor.name){
@@ -112,7 +130,10 @@ class App extends Component {
         else if (respJ.label === 'Inform'){
           if((respJ.infor.typeI === 'size' || respJ.infor.typeR === 'size') && stateConv !== 'order'){
             this.setState({stateConv: 'sizeadvisory'})
-          } 
+          }
+          if(respJ.infor.height !== '' || respJ.infor.weight !== '' || respJ.infor.V2 !== ''){
+            this.setState({stateConv: 'sizeadvisory'})
+          }
           temp.typeI = respJ.infor.typeI
           temp.typeR = infor.typeR
           this.setState({infor:temp})
@@ -197,6 +218,15 @@ class App extends Component {
       if(infor.typeR !== ''){
         temp.typeR = infor.typeR;
       }
+      if(infor.height !== ''){
+        temp.height = infor.height
+      }
+      if(infor.weight !== ''){
+        temp.weight = infor.weight
+      }
+      if(infor.V2 !== ''){
+        temp.V2 = infor.V2
+      }
       this.setState({infor:temp}, () => {
         console.log(infor)
         if(prediction)
@@ -251,8 +281,8 @@ class App extends Component {
         <ThemeProvider theme = {this.theme}>
           <ChatBot
             headerTitle = 'TMT chatbot'
-            botDelay = {4000}
-            userDelay = {2000}
+            botDelay = {5000}
+            userDelay = {1500}
             width = {'500px'}
             height = {'650px'}
             steps = {[
@@ -276,7 +306,7 @@ class App extends Component {
                   const {conversation} = this.state;
                   var newcon = conversation;  
                   if(Array.isArray(value.value)){
-                    newcon.push('User: ImageURL')
+                    newcon.push('User:ImageURL')
                     this.setState({conversation: newcon})
                     this.predictImg(value.value[0])
                   }
@@ -403,10 +433,15 @@ class App extends Component {
                       if(infor.amount === 0){
                         mess = infor.name + ' hết hàng rồi nha , bạn muốn tư vấn sản phẩm khác không ạ?'
                       }
-                      else mess = infor.name + ' còn hàng nha. Bạn cho mình xin số đo mình tư vấn size cho bạn nha.'
+                      else{
+                        mess = infor.name + ' còn hàng nha. Bạn cho mình xin số đo mình tư vấn size cho bạn nha.'
+                      } 
                     }
                     else if (infor.typeR === 'size'){
-                      mess = infor.name + ' còn size ' + infor.size + ' nha. Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      mess = infor.name + ' còn size ' + infor.size + ' nha.'
+                      if(!(infor.weight && infor.height)){
+                        mess += ' Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
+                      }
                       console.log(stateConv)
                       if((sizeR).includes('None')){
                         mess = infor.name + ' hết size ' + (sizeR).slice(-1) + ' rồi nha.'

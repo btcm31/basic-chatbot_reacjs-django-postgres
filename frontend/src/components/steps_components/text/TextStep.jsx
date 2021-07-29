@@ -16,10 +16,16 @@ class TextStep extends Component {
   }
 
   componentDidMount() {
-    const { step, triggerNextStep, isFirst } = this.props;
+    const { step, triggerNextStep } = this.props;
     const { component, delay, waitAction } = step;
     const isComponentWatingUser = component && waitAction;
-    let a = isFirst && !step.user ? 0 : delay;
+    let a = step.id === 'start' ? 0 : delay;
+    if(step.id === 'bot'){
+      a = 1000;
+    }
+    else if(step.id === 'bot1'){
+      a = 2000
+    }
 
     setTimeout(() => {
       this.setState({ loading: false }, () => {
