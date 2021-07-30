@@ -127,7 +127,6 @@ def chuan_hoa_dau_cau_tieng_viet(sentence):
     words = sentence.split()
     for index, word in enumerate(words):
         cw = re.sub(r'(^\p{P}*)([p{L}.]*\p{L}+)(\p{P}*$)', r'\1/\2/\3', word).split('/')
-        # print(cw)
         if len(cw) == 3:
             cw[1] = chuan_hoa_dau_tu_tieng_viet(cw[1])
         words[index] = ''.join(cw)
@@ -253,10 +252,12 @@ def predictJson(request):
         phone = re.findall(r'\d{10}',text)[0]
     except:
         pass
+    if phone:
+        lb = 'Inform'
+        lbInform+='phone'
     if lbInform == 'Id member':
         pass
-    if lbInform == 'ID_product':
-        pass
+
     if lbInform == 'amount_product' or lb == 'Order':
         try:
             amount = int(re.findall(r'\d{1,2}',text)[0])
@@ -275,7 +276,7 @@ def predictJson(request):
     return JsonResponse({'label':lb,
                         'infor': {'size':",".join(set(size)),'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest}})
+                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest,}})
 def imgPredict(request):
     data = json.loads(request.body)
     try:
@@ -286,23 +287,15 @@ def imgPredict(request):
         imginput = imagenet_utils.preprocess_input(imginput)
         aug_test= ImageDataGenerator(rescale=1./255)
         idx = np.argmax(modelImg.predict(aug_test.standardize(imginput)))
-        print(np.max(modelImg.predict(aug_test.standardize(imginput))))
         name_pro = ['Set vest nơ', 'Set cổ xéo', 'Set sơ mi cổ nơ', 'Set trắng nút', 'Set vest', 'Set đầm sơ mi trắng', 'Set Xanh', 'Sét vàng','Sét Đen Sẻ', 'Đầm Body Nút', 'Đầm body lưới', 'Đầm body nude ren', 'Đầm body vest', 'Đầm caro', 'Đầm caro cổ vest', 'Đầm nâu nút', 'Đầm nude xoắn', 'Đầm trắng 2 dây', 'Đầm trắng dập li', 'Đầm xám nút', 'Đần nude lưới'][idx]
     except:
         name_pro = 'no-find-img'
 
-    lbRequest = "ID_product"
     url_lst = []
     size = []
     material = ""
     amount = ""
     color = []
-    lbInform = "ID_product"
-    weight = ""
-    height = ""
-    v2 = ""
-    phone = ""
-    address = ""
     Id_cus = ""
     for pro in Product.objects.all():
         if unidecode(pro.product_name) == unidecode(name_pro):
@@ -312,10 +305,10 @@ def imgPredict(request):
             amount = pro.amount
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
     return JsonResponse({'label':'Request','infor': {'size': ",".join(set(size)),
-                                'weight':weight,'height':height,'V2':v2,
-                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),
+                                'weight':"",'height':"",'V2':"",
+                                'phone':"",'Id_cus':"",'addr':"",'material':material.lower(),
                                 'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest}})
+                                'name':name_pro.lower(),'url': url_lst,'typeI':"ID_product",'typeR': "ID_product"}})
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)

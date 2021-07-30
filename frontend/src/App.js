@@ -47,14 +47,14 @@ class App extends Component {
   async predict(text){
     const url = "http://localhost:8000/predictJson";
     const bodyData = JSON.stringify({
-      "text" : text
+      "text" : text 
     });
     const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
     await fetch(url,reqOpt)
     .then((resp)=>resp.json())
     .then((respJ)=> {
       this.setState({prediction:respJ.label}, ()=>{
-        console.log(respJ.infor)
+        console.log(respJ)
         const {infor,order,stateConv,previousIntent,conversation} = this.state
         let temp = infor
         this.setState({sizeR: respJ.infor.size})
@@ -141,15 +141,15 @@ class App extends Component {
         else if(respJ.label === 'Other'){
           if(stateConv === 'sizeadvisory'){
             if(previousIntent === reply.Request.size['V2-customer']){
-              temp.V2 = -1
+              temp.V2 = respJ.infor.V2 ? respJ.infor.V2 : -1;
               temp.typeI = 'V2'
             }
             else if(previousIntent === reply.Request.size['weight-customer']){
-              temp.weight = -1
+              temp.weight = respJ.infor.weight ? respJ.infor.weight : -1
               temp.typeI = 'weight'
             }
             else if(previousIntent === reply.Request.size['height-customer']){
-              temp.height = -1
+              temp.height = respJ.infor.height ? respJ.infor.height : -1
               temp.typeI = 'height'
             }
           }
@@ -283,7 +283,7 @@ class App extends Component {
             headerTitle = 'TMT chatbot'
             botDelay = {5000}
             userDelay = {1500}
-            width = {'500px'}
+            width = {'750px'}
             height = {'650px'}
             steps = {[
               {
@@ -303,6 +303,9 @@ class App extends Component {
                 user: true,
                 trigger: (value)=>{
                   console.log(value.value)
+                  if(!value.value){
+                    return 'user'
+                  }
                   const {conversation} = this.state;
                   var newcon = conversation;  
                   if(Array.isArray(value.value)){
@@ -367,7 +370,6 @@ class App extends Component {
                           mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                         }
                       }
-
                       if(infor.ID_product === ''){
                         prediction = 'Request'
                       }
@@ -576,8 +578,8 @@ class App extends Component {
                   if(value.steps.reply.message === reply.Request.sizeadvisory){
                     return 'sizetable'
                   }
-                  if(value.steps.reply.message === reply.Request.size['not-found-size']){
-
+                  if(value.steps.reply.message === reply.Request.size['not-found-size'] || value.steps.reply.message === reply.Request.not_found_product){
+                    return 'newproduct'
                   }
                   if(value.steps.reply.message === 'Dạ đây ạ.'){
                     return 'imageProduct'
@@ -591,6 +593,11 @@ class App extends Component {
               {
                 id: 'sizetable',
                 message: reply.sizeTable,
+                trigger: 'user'
+              },
+              {
+                id: 'newproduct',
+                message: 'Bạn muốn tư vấn sản phẩm khác ko ạ?',
                 trigger: 'user'
               },
               {
