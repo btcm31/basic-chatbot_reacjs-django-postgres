@@ -299,7 +299,7 @@ class App extends Component {
                 trigger: 'user',
               },
               {
-                id: 'user',
+                id: 'user', 
                 user: true,
                 trigger: (value)=>{
                   console.log(value.value)
