@@ -273,6 +273,8 @@ def predictJson(request):
                 amount = pro.amount
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
             name_pro = pro.product_name
+            if lb == 'Other':
+                lb = 'Request'
     return JsonResponse({'label':lb,
                         'infor': {'size':",".join(set(size)),'weight':weight,'height':height,'V2':v2,
                                 'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),'color':','.join(set(color)).lower(),'amount':amount,

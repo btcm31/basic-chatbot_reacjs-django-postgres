@@ -191,6 +191,7 @@ class ChatBot extends Component {
       this.setState({ typing: true });
     }
     else {
+      console.log(event.target.value)
       this.setState({ typing: false })
       setTimeout(() => {
         if(this.isInputValueEmpty())
