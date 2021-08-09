@@ -18,6 +18,7 @@ class App extends Component {
       },
       stateConv: 'inforproduct', //[inforproduct, sizeadvisory, order, changing]
       sizeR: '',
+      previousReply: '',
       previousIntent: '',
       order: {
         name_product: '',
@@ -57,7 +58,7 @@ class App extends Component {
       this.setState({
         prediction:respJ.label,
       }, ()=>{
-        const {infor, order, stateConv, previousIntent, conversation, lstCus} = this.state
+        const {infor, order, stateConv, previousReply, previousIntent, conversation, lstCus} = this.state
         let temp = infor,
             sizeR = respJ.infor.size,
             stateConvUpdate = stateConv, 
@@ -117,7 +118,7 @@ class App extends Component {
           } 
           else if(respJ.infor.typeR === 'size'){
             let temp1 = conversation.slice(-2)
-            if(temp1[0].includes('User: ')){
+            if(temp1[0].includes('User: ') && previousIntent === 'Inform'){
               stateConvUpdate = 'sizeadvisory'
               infor.typeI = 'height'
               check = true
@@ -144,21 +145,21 @@ class App extends Component {
         }
         else if(respJ.label === 'Other'){
           if(stateConv === 'sizeadvisory'){
-            if(previousIntent === reply.Request['V2-customer']){
+            if(previousReply === reply.Request['V2-customer']){
               temp.V2 = respJ.infor.V2 ? respJ.infor.V2 : -1;
               temp.typeI = 'V2'
             }
-            else if(previousIntent === reply.Request['weight-customer']){
+            else if(previousReply === reply.Request['weight-customer']){
               temp.weight = respJ.infor.weight ? respJ.infor.weight : -1
               temp.typeI = 'weight'
             }
-            else if(previousIntent === reply.Request['height-customer']){
+            else if(previousReply === reply.Request['height-customer']){
               temp.height = respJ.infor.height ? respJ.infor.height : -1
               temp.typeI = 'height'
             }
           }
           if(stateConv === 'order'){
-            if(previousIntent === reply.Order.phone){
+            if(previousReply === reply.Order.phone){
               temp.phone = respJ.infor.phone
               temp.typeI = 'phone'
             }
@@ -194,13 +195,15 @@ class App extends Component {
         if(respJ.label === 'Order'){
           stateConvUpdate = 'order'
         }
-        lstCusTemp.push([respJ.label, respJ.infor.typeI, respJ.infor.typeR])
+        if(respJ.label === 'Request')
+          lstCusTemp.push([respJ.label, respJ.infor.typeI, respJ.infor.typeR])
         this.setState({
           sizeR,
           stateConv: stateConvUpdate,
           infor: temp,
           order: temporder,
-          lstCus:lstCusTemp
+          lstCus:lstCusTemp,
+          previousIntent: respJ.label
         })
       })
     });
@@ -303,12 +306,11 @@ class App extends Component {
                 id: 'user',
                 user: true,
                 trigger: (value)=>{
-                  console.log(value.value)
                   if(!value.value){
                     return 'user'
                   }
                   const {conversation} = this.state;
-                  var newcon = conversation;  
+                  var newcon = conversation;
                   if(Array.isArray(value.value)){
                     newcon.push('User:ImageURL')
                     this.setState({conversation: newcon})
@@ -336,21 +338,26 @@ class App extends Component {
               },
               {
                 id: 'reply',
-                message:()=>{
+                message:(value)=>{
                   var mess = "";
-                  const {conversation, infor, stateConv, order, sizeR, lstCus} = this.state;
-                  var prediction = this.state.prediction;
+                  var {conversation, infor, stateConv, order, sizeR, lstCus, prediction} = this.state;
+                  var {typeI, typeR} = infor;
                   var newcon = conversation;
-                  console.log(lstCus)
+                  if(lstCus.length > 1){
+                    let k = lstCus[0];
+                    prediction = k[0];
+                    typeI = k[1]
+                    typeR = k[2]
+                  }
                   if(prediction === 'Other'){
                     mess = reply.Other
                     if(stateConv === 'sizeadvisory'){
                       prediction = 'Inform'
                     }
-                    else if(infor.typeR === 'product_image'){
+                    else if(typeR === 'product_image'){
                       prediction = 'Request'
                     }
-                    else if(infor.typeI === 'phone'){
+                    else if(typeI === 'phone'){
                       prediction = 'Order'
                     }
                   }
@@ -373,7 +380,7 @@ class App extends Component {
                       else if(sizeR.includes('None')){
                         mess = 'Xin lỗi bạn bên mình hết size ' + sizeR.slice(-1) + ' rồi nha.'
                       }
-                      else if(infor.typeI === 'size'){
+                      else if(typeI === 'size'){
                         mess = reply.Request.sizeadvisory
                       }
                       else{
@@ -403,7 +410,7 @@ class App extends Component {
                     }
                   }
                   if(prediction === 'Request'){
-                    if (infor.typeR === 'ID_product'){
+                    if (typeR === 'ID_product'){
                       mess = infor.name + ' còn hàng á. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn size cho bạn nha.'
                       if(infor.name === ''){
                         mess = reply.Request.not_found_product
@@ -415,7 +422,7 @@ class App extends Component {
                     else if(infor.name === ''){
                       mess = reply.Request.not_ID_product
                     }
-                    else if(infor.typeR === 'amount_product'){
+                    else if(typeR === 'amount_product'){
                       if(infor.amount === 0){
                         mess = infor.name + reply.Request['out-of-pro']
                       }
@@ -423,7 +430,7 @@ class App extends Component {
                         mess = infor.name + ' còn hàng nha. Bạn cho mình xin số đo mình tư vấn size cho bạn nha.'
                       } 
                     }
-                    else if (infor.typeR === 'size'){
+                    else if (typeR === 'size'){
                       mess = infor.name + ' còn size ' + infor.size + ' nha.'
                       if(!(infor.weight && infor.height)){
                         mess += ' Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
@@ -442,7 +449,7 @@ class App extends Component {
                             mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                           }
                         }
-                        else if(infor.typeI === 'size'){
+                        else if(typeI === 'size'){
                           mess = reply.Request.sizeadvisory
                           if(infor.size.includes('None')){
                             mess = 'Xin lỗi bạn bên mình hết size ' + infor.size.slice(-1) + ' rồi nha.'
@@ -464,20 +471,20 @@ class App extends Component {
                         }
                       }
                     }
-                    else if (infor.typeR === 'material_product'){
+                    else if (typeR === 'material_product'){
                       mess = 'Dạ ' + infor.name + ' chất ' + infor.material + ' nha.'
                     }
-                    else if (infor.typeR === 'product_image'){
+                    else if (typeR === 'product_image'){
                       mess = 'Dạ đây ạ.'
                     }
-                    else if (infor.typeR === 'color_product'){
+                    else if (typeR === 'color_product'){
                       mess = infor.name + ' còn màu ' + infor.color + ' nha.'
                     }
-                    else if (infor.typeR === 'cost_product'){
+                    else if (typeR === 'cost_product'){
                       mess = infor.name + ' có giá 380k giảm còn 195k nha.'
                     }
                     else {
-                      mess = reply.Request[infor.typeR]
+                      mess = reply.Request[typeR]
                     }
                   }
                   if (prediction === 'Order'){
@@ -519,12 +526,12 @@ class App extends Component {
                   }
                   if(prediction === 'OK'){
                     mess = reply.OK
-                    if(stateConv === 'sizeadvisory' && this.state.previousIntent !== reply.Request['not-found-size']){
+                    if(stateConv === 'sizeadvisory' && this.state.previousReply !== reply.Request['not-found-size']){
                       this.setState({stateConv:'order'})
                       mess = reply.Order.ok
                     }
                     else if(stateConv === 'order'){
-                      if(this.state.previousIntent === 'doneOrder'){
+                      if(this.state.previousReply === 'doneOrder'){
                         mess = reply.Done
                       }
                     }
@@ -534,7 +541,7 @@ class App extends Component {
                     this.setState({
                       sizeR: '',
                       conversation: '',
-                      previousIntent: '',
+                      previousReply: '',
                       infor: {
                         'size':'','weight':'','height':'','V2':'',
                         'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
@@ -552,12 +559,28 @@ class App extends Component {
                   newcon.push('Bot: ' + mess)
                   this.setState({
                     conversation: newcon,
-                    previousIntent: mess,
-                    lstCus: []
+                    previousReply: mess,
                   })
+                  if(lstCus.length > 0){
+                    if(!value.steps.reply)
+                      return mess
+                    if(value.steps.reply.message === mess)
+                    {
+                      return 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse'
+                    }
+                  }
                   return mess
                 },
                 trigger: (value)=>{
+                  var {lstCus} = this.state;
+                  console.log(lstCus)
+                  if(lstCus.length > 1){
+                    lstCus.shift();
+                    return 'reply'
+                  }
+                  else{
+                    lstCus.shift();
+                  }
                   if(value.steps.reply.message === reply.Request.sizeadvisory){
                     return 'sizetable'
                   }
@@ -612,7 +635,7 @@ class App extends Component {
                 id: 'product',
                 message: () => {
                   const {order} = this.state;
-                  this.setState({previousIntent: 'doneOrder'})
+                  this.setState({previousReply: 'doneOrder'})
                   return String(order.amount) + ' ' + order.name_product + ' size ' + order.size + '. Tổng cộng đơn hàng là ' + order.price + ' nha.'
                 },
                 trigger: 'user'

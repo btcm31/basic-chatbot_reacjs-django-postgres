@@ -411,7 +411,6 @@ class ChatBot extends Component {
   
   onImage = async (failedImages, successImages) => {
     this.setState({ url: successImages});
-    console.log('fail')
     try {
         const parts = successImages[0].split(';');
         const mime = parts[0].split(':')[1];
