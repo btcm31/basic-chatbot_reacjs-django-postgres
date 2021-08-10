@@ -49,7 +49,7 @@ class App extends Component {
   async predict(text){
     const url = "http://localhost:8000/predictJson";
     const bodyData = JSON.stringify({
-      "text" : text 
+      "text" : text
     });
     const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
     await fetch(url, reqOpt)
@@ -58,10 +58,11 @@ class App extends Component {
       this.setState({
         prediction:respJ.label,
       }, ()=>{
+        console.log(respJ)
         const {infor, order, stateConv, previousReply, previousIntent, conversation, lstCus} = this.state
         let temp = infor,
             sizeR = respJ.infor.size,
-            stateConvUpdate = stateConv, 
+            stateConvUpdate = stateConv,
             temporder = order,
             lstCusTemp = lstCus;
 
@@ -87,8 +88,10 @@ class App extends Component {
           temp.weight = respJ.infor.weight
         }
         else if(respJ.infor.typeI === 'heightweight'){
-          temp.height = respJ.infor.height
-          temp.weight = respJ.infor.weight
+          if(respJ.infor.height)
+            temp.height = respJ.infor.height
+          if(respJ.infor.weight)
+            temp.weight = respJ.infor.weight
         }
         else if(respJ.infor.typeI === 'size' && respJ.infor.size !== ''){
           if(!(infor.size).includes(respJ.infor.size)){
@@ -113,11 +116,12 @@ class App extends Component {
         if(respJ.label === 'Request'){
           let check = false
           stateConvUpdate = 'inforproduct'
-          if(respJ.infor.typeI !== 'size'&& respJ.infor.typeR === 'size'){
+          if(respJ.infor.typeI !== 'size' && respJ.infor.typeR === 'size' && (respJ.infor.height || respJ.infor.weight || respJ.infor.V2)){
             stateConvUpdate = 'sizeadvisory'
           } 
           else if(respJ.infor.typeR === 'size'){
             let temp1 = conversation.slice(-2)
+            console.log(temp1)
             if(temp1[0].includes('User: ') && previousIntent === 'Inform'){
               stateConvUpdate = 'sizeadvisory'
               infor.typeI = 'height'
@@ -191,6 +195,7 @@ class App extends Component {
           else if (respJ.infor.size === '' && this.state.sizeR !== ''){
             temporder.size = this.state.sizeR 
           }
+          temporder.price = temporder.amount * infor.price
         }
         if(respJ.label === 'Order'){
           stateConvUpdate = 'order'
@@ -253,9 +258,22 @@ class App extends Component {
     await fetch(url, reqOpt)
     .then((resp) => resp.json())
     .then((respJ) => {
-      this.setState({conversation: []})
+      console.log('Conversation updated!')
     });
   };
+
+  async order(infor){
+    const url = "http://localhost:8000/order";
+    const bodyData = JSON.stringify({
+      "order" : infor
+    });
+    const reqOpt = {method: "POST", headers: {"Content-type": "application/json"}, body: bodyData};
+    await fetch(url, reqOpt)
+    .then((resp) => resp.json())
+    .then((respJ) => {
+      console.log('Bill updated!')
+    });
+  }
 
   consultation(height, weight, v2){
     if(weight >= 40 && weight <= 56){
@@ -313,14 +331,13 @@ class App extends Component {
                   var newcon = conversation;
                   if(Array.isArray(value.value)){
                     newcon.push('User:ImageURL')
-                    this.setState({conversation: newcon})
                     this.predictImg(value.value[0])
                   }
                   else{
                     newcon.push('User: ' + value.value)
-                    this.setState({conversation: newcon})
                     this.predict(value.value)
                   }
+                  this.setState({conversation: newcon})
                   return 'bot'
                 }
               },
@@ -341,15 +358,17 @@ class App extends Component {
                 message:(value)=>{
                   var mess = "";
                   var {conversation, infor, stateConv, order, sizeR, lstCus, prediction} = this.state;
+                  console.log(infor)
                   var {typeI, typeR} = infor;
                   var newcon = conversation;
-                  if(lstCus.length > 1){
-                    let k = lstCus[0];
-                    prediction = k[0];
-                    typeI = k[1]
-                    typeR = k[2]
+                  var many = false;
+                  if (lstCus.length > 1){
+                    many = true;
+                    prediction = lstCus[0][0];
+                    typeI = lstCus[0][1]
+                    typeR = lstCus[0][2]
                   }
-                  if(prediction === 'Other'){
+                  if (prediction === 'Other'){
                     mess = reply.Other
                     if(stateConv === 'sizeadvisory'){
                       prediction = 'Inform'
@@ -409,7 +428,7 @@ class App extends Component {
                       prediction = 'Request'
                     }
                   }
-                  if(prediction === 'Request'){
+                  if (prediction === 'Request'){
                     if (typeR === 'ID_product'){
                       mess = infor.name + ' còn hàng á. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn size cho bạn nha.'
                       if(infor.name === ''){
@@ -519,12 +538,12 @@ class App extends Component {
                     this.setState({stateConv:'changing'})
                   }
                   if (prediction === 'feedback'){
-                    mess = reply.Feedback
+                    mess = reply.Done
                   }
                   if (prediction === 'Hello' || prediction === 'Connect'){
                     mess = reply['Hello-Connect']
                   }
-                  if(prediction === 'OK'){
+                  if (prediction === 'OK'){
                     mess = reply.OK
                     if(stateConv === 'sizeadvisory' && this.state.previousReply !== reply.Request['not-found-size']){
                       this.setState({stateConv:'order'})
@@ -533,6 +552,7 @@ class App extends Component {
                     else if(stateConv === 'order'){
                       if(this.state.previousReply === 'doneOrder'){
                         mess = reply.Done
+                        this.order(order)
                       }
                     }
                   }
@@ -542,10 +562,10 @@ class App extends Component {
                       sizeR: '',
                       conversation: '',
                       previousReply: '',
+                      previousIntent: '',
                       infor: {
-                        'size':'','weight':'','height':'','V2':'',
-                        'phone':'','Id_cus':'','addr':'','material':'','color':'','amount':'',
-                        'name':'','url': '','typeI':'','typeR': ''
+                        size: '', weight: '', height: '', V2: '', phone: '', Id_cus: '', addr: '',
+                        material: '', color: '', amount: '', name: '', url: '', typeI: '', typeR: ''
                       },
                       lstCus: [],
                       order: {
@@ -561,7 +581,8 @@ class App extends Component {
                     conversation: newcon,
                     previousReply: mess,
                   })
-                  if(lstCus.length > 0){
+                  let m = conversation.slice(-1);
+                  if(m[0].includes('Bot:') || many){
                     if(!value.steps.reply)
                       return mess
                     if(value.steps.reply.message === mess)
@@ -573,7 +594,6 @@ class App extends Component {
                 },
                 trigger: (value)=>{
                   var {lstCus} = this.state;
-                  console.log(lstCus)
                   if(lstCus.length > 1){
                     lstCus.shift();
                     return 'reply'

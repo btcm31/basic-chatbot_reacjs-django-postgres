@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-import tensorflow as tf
 import pickle
 import json
 import pandas as pd
@@ -13,22 +12,24 @@ from io import BytesIO
 import base64
 from tensorflow.keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
 from tensorflow.keras.applications import imagenet_utils
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import load_model
 
 
 #Load model
-model = tf.keras.models.load_model('./intentmodel')
+model =load_model('./intentmodel')
 token = pickle.load(open('./intentmodel/saved_tokenizer.pickle','rb'))
 label = pickle.load(open('./intentmodel/saved_label.pickle','rb'))
 #Request model 
-modelRequest = tf.keras.models.load_model('./requestmodel')
+modelRequest =load_model('./requestmodel')
 tokenRequest = pickle.load(open('./requestmodel/saved_tokenizer.pickle','rb'))
 labelRequest = pickle.load(open('./requestmodel/saved_label.pickle','rb'))
 #Inform model
-modelInform = tf.keras.models.load_model('./informmodel')
+modelInform =load_model('./informmodel')
 tokenInform = pickle.load(open('./informmodel/saved_tokenizer.pickle','rb'))
 labelInform = pickle.load(open('./informmodel/saved_label.pickle','rb'))
 #Image model
-modelImg = tf.keras.models.load_model('./img-pretrainedmodel')
+modelImg =load_model('./img-pretrainedmodel')
 labelImg = pickle.load(open('./img-pretrainedmodel/saved_label.pickle','rb'))
 
 
@@ -50,7 +51,7 @@ nguyen_am_to_ids = {}
 for i in range(len(bang_nguyen_am)):
     for j in range(len(bang_nguyen_am[i]) - 1):
         nguyen_am_to_ids[bang_nguyen_am[i][j]] = (i, j)
-
+        
 def chuan_hoa_dau_tu_tieng_viet(word):
     if not is_valid_vietnam_word(word):
         return word
@@ -107,7 +108,6 @@ def chuan_hoa_dau_tu_tieng_viet(word):
         x, y = nguyen_am_to_ids[chars[nguyen_am_index[1]]]
         chars[nguyen_am_index[1]] = bang_nguyen_am[x][dau_cau]
     return ''.join(chars)
-
 def is_valid_vietnam_word(word):
     chars = list(word)
     nguyen_am_index = -1
@@ -121,7 +121,6 @@ def is_valid_vietnam_word(word):
                     return False
                 nguyen_am_index = index
     return True
-
 def chuan_hoa_dau_cau_tieng_viet(sentence):
     sentence = sentence.lower()
     words = sentence.split()
@@ -131,7 +130,6 @@ def chuan_hoa_dau_cau_tieng_viet(sentence):
             cw[1] = chuan_hoa_dau_tu_tieng_viet(cw[1])
         words[index] = ''.join(cw)
     return ' '.join(words)
-
 def loaddicchar():
     dic = {}
     char1252 = 'à|á|ả|ã|ạ|ầ|ấ|ẩ|ẫ|ậ|ằ|ắ|ẳ|ẵ|ặ|è|é|ẻ|ẽ|ẹ|ề|ế|ể|ễ|ệ|ì|í|ỉ|ĩ|ị|ò|ó|ỏ|õ|ọ|ồ|ố|ổ|ỗ|ộ|ờ|ớ|ở|ỡ|ợ|ù|ú|ủ|ũ|ụ|ừ|ứ|ử|ữ|ự|ỳ|ý|ỷ|ỹ|ỵ|À|Á|Ả|Ã|Ạ|Ầ|Ấ|Ẩ|Ẫ|Ậ|Ằ|Ắ|Ẳ|Ẵ|Ặ|È|É|Ẻ|Ẽ|Ẹ|Ề|Ế|Ể|Ễ|Ệ|Ì|Í|Ỉ|Ĩ|Ị|Ò|Ó|Ỏ|Õ|Ọ|Ồ|Ố|Ổ|Ỗ|Ộ|Ờ|Ớ|Ở|Ỡ|Ợ|Ù|Ú|Ủ|Ũ|Ụ|Ừ|Ứ|Ử|Ữ|Ự|Ỳ|Ý|Ỷ|Ỹ|Ỵ'.split(
@@ -141,13 +139,10 @@ def loaddicchar():
     for i in range(len(char1252)):
         dic[char1252[i]] = charutf8[i]
     return dic
- 
-dicchar = loaddicchar()
- 
 def covert_unicode(txt):
     return re.sub(
         r'à|á|ả|ã|ạ|ầ|ấ|ẩ|ẫ|ậ|ằ|ắ|ẳ|ẵ|ặ|è|é|ẻ|ẽ|ẹ|ề|ế|ể|ễ|ệ|ì|í|ỉ|ĩ|ị|ò|ó|ỏ|õ|ọ|ồ|ố|ổ|ỗ|ộ|ờ|ớ|ở|ỡ|ợ|ù|ú|ủ|ũ|ụ|ừ|ứ|ử|ữ|ự|ỳ|ý|ỷ|ỹ|ỵ|À|Á|Ả|Ã|Ạ|Ầ|Ấ|Ẩ|Ẫ|Ậ|Ằ|Ắ|Ẳ|Ẵ|Ặ|È|É|Ẻ|Ẽ|Ẹ|Ề|Ế|Ể|Ễ|Ệ|Ì|Í|Ỉ|Ĩ|Ị|Ò|Ó|Ỏ|Õ|Ọ|Ồ|Ố|Ổ|Ỗ|Ộ|Ờ|Ớ|Ở|Ỡ|Ợ|Ù|Ú|Ủ|Ũ|Ụ|Ừ|Ứ|Ử|Ữ|Ự|Ỳ|Ý|Ỷ|Ỹ|Ỵ',
-        lambda x: dicchar[x.group()], txt)
+        lambda x: loaddicchar()[x.group()], txt)
 def normalizeString(s):
     # Tách dấu câu nếu kí tự liền nhau
     marks = '[.!?,-${}()]'
@@ -187,36 +182,25 @@ def extractHeight(x):
     elif re.search(r'[\.]\d{1,2}',x):
         return 100 + int((re.sub(r'\.','',x)+'0')[:2])
 def predictJson(request):
-    url_lst = []
-    size = []
-    material = ""
-    amount = ""
-    color = []
-    name_pro = ""
-    lbRequest = "ID_product"
-    lbInform = "ID_product"
-    weight = ""
-    height = ""
-    v2 = ""
-    phone = ""
-    address = ""
-    Id_cus = ""
+    size, color, url_lst = [], [], []
+    name_pro, amount, material = "", "", ""
+    lbRequest, lbInform = "ID_product", "ID_product"
+    Id_cus, address, v2, phone, height, weight = "", "", "", "", "", ""
     try:
         data = json.loads(request.body)
         text = data['text'].encode().decode('utf-8')
         text = text_preprocess(text)
     except KeyError:
         text = ""
-        print(data)
 
-    pre = model.predict(tf.keras.preprocessing.sequence.pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
+    pre = model.predict(pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
     lb = label[np.argmax(pre)]
 
-    preTypeR = modelRequest.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
+    preTypeR = modelRequest.predict(pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
     lbRe = labelRequest[np.argmax(preTypeR)].split(",")
     lbRequest = lbRe[-1]
 
-    typeInform = modelInform.predict(tf.keras.preprocessing.sequence.pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
+    typeInform = modelInform.predict(pad_sequences(tokenInform.texts_to_sequences([text]),maxlen=len(tokenInform.word_counts)+1))
     lstlb = labelInform[np.argmax(typeInform)].split(",")
     lbInform = lstlb[-1].split()[0] if len(lstlb) == 2 else "heightweight"
 
@@ -254,7 +238,7 @@ def predictJson(request):
         pass
     if phone:
         lb = 'Inform'
-        lbInform+='phone'
+        lbInform += 'phone' if lbInform != 'phone' else ''
     if lbInform == 'Id member':
         pass
 
@@ -275,10 +259,12 @@ def predictJson(request):
             name_pro = pro.product_name
             if lb == 'Other':
                 lb = 'Request'
-    return JsonResponse({'label':lb,
-                        'infor': {'size':",".join(set(size)),'weight':weight,'height':height,'V2':v2,
-                                'phone':phone,'Id_cus':Id_cus,'addr':address,'material':material.lower(),'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':lbInform,'typeR': lbRequest,}})
+    return JsonResponse({"label":lb,
+                         "infor": {"size" : ",".join(set(size)), "weight": weight, "height": height, "V2": v2,
+                                 "phone": phone, "Id_cus": Id_cus, "addr": address, "material": material.lower(),
+                                 "color": ','.join(set(color)).lower(), "amount": amount,
+                                 "name" : name_pro.lower(), "url": url_lst, "typeI": lbInform, "typeR": lbRequest,}
+                        })
 def imgPredict(request):
     data = json.loads(request.body)
     try:
@@ -293,12 +279,8 @@ def imgPredict(request):
     except:
         name_pro = 'no-find-img'
 
-    url_lst = []
-    size = []
-    material = ""
-    amount = ""
-    color = []
-    Id_cus = ""
+    url_lst, size, color = [], [], []
+    material, amount, Id_cus = "", "", ""
     for pro in Product.objects.all():
         if unidecode(pro.product_name) == unidecode(name_pro):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
@@ -306,11 +288,12 @@ def imgPredict(request):
             material = pro.material
             amount = pro.amount
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
-    return JsonResponse({'label':'Request','infor': {'size': ",".join(set(size)),
-                                'weight':"",'height':"",'V2':"",
-                                'phone':"",'Id_cus':"",'addr':"",'material':material.lower(),
-                                'color':','.join(set(color)).lower(),'amount':amount,
-                                'name':name_pro.lower(),'url': url_lst,'typeI':"ID_product",'typeR': "ID_product"}})
+    return JsonResponse({"label": 'Request',
+                         "infor": {"size": ",".join(set(size)), "weight": "", "height": "", "V2": "",
+                                 "phone": "", "Id_cus": "", "addr": "", "material": material.lower(),
+                                 "color": ','.join(set(color)).lower(), "amount": amount,
+                                 "name": name_pro.lower(), "url": url_lst, "typeI": "ID_product", "typeR": "ID_product"}
+                        })
 #python manage.py migrate --run-syncdb
 def conversation(request):
     data = json.loads(request.body)
@@ -321,4 +304,8 @@ def conversation(request):
 
 def order(request):
     data = json.loads(request.body)
-    conv = data['order'].encode().decode('utf-8')
+    order = data['order']
+    orderbill = Order.objects.create(customer_name = order["name_cus"], price = order["price"], size = order["size"],
+                                        product_name = order["name_product"], amount = order["amount"], phone = order["phone"],
+                                        address = order["addr"], color = order["color"])
+    return JsonResponse({'bill': order})

@@ -20,11 +20,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf.urls.static import static
 from django.conf import settings
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('predictJson',csrf_exempt(views.predictJson), name = "Chatbot Application"),
-    path('conversation',csrf_exempt(views.conversation), name = "conversation"),
-    path('imgPredict',csrf_exempt(views.imgPredict), name = "image"),
-    path('order',csrf_exempt(views.order), name = "order"),
+    path('predictJson', csrf_exempt(views.predictJson), name = "Chatbot Application"),
+    path('conversation', csrf_exempt(views.conversation), name = "conversation"),
+    path('imgPredict', csrf_exempt(views.imgPredict), name = "image"),
+    path('order', csrf_exempt(views.order), name = "order"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

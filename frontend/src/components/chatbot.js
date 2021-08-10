@@ -45,7 +45,7 @@ class ChatBot extends Component {
 
     this.content = null;
     this.input = null;
-
+    this.onValueChangeTimer = null;
     this.supportsScrollBehavior = false;
 
     this.setContentRef = element => {
@@ -182,18 +182,18 @@ class ChatBot extends Component {
   };
   onClickImg = () => {
     this.setState({ uploading: true},()=>{
-      this.triggerNextStep(999999999)
+      this.triggerNextStep(999999999);
     });
   }
   onValueChange = event => {
     this.setState({ inputValue: event.target.value });
     if((event.target.value).length >= 1){
+      clearTimeout(this.onValueChangeTimer);
       this.setState({ typing: true });
     }
     else {
-      console.log(event.target.value)
-      this.setState({ typing: false })
-      setTimeout(() => {
+      this.setState({ typing: false });
+      this.onValueChangeTimer = setTimeout(() => {
         if(this.isInputValueEmpty())
           this.triggerNextStep(-999999999)
       }, 5000);
