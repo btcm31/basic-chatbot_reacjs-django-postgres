@@ -156,8 +156,6 @@ def text_preprocess(document):
     document = re.sub(r'<[^>]*>', '', document)
     #uwf=>ừ,....
     document = bogo.process_sequence(document)
-    # convert to lower case
-    document = document.lower()
     #tach dau cau
     document = normalizeString(document)
     document = chuan_hoa_dau_cau_tieng_viet(document)
@@ -183,7 +181,7 @@ def extractHeight(x):
         return 100 + int((re.sub(r'\.','',x)+'0')[:2])
 def predictJson(request):
     size, color, url_lst = [], [], []
-    name_pro, amount, material = "", "", ""
+    name_pro, amount, material, price = "", "", "", ""
     lbRequest, lbInform = "ID_product", "ID_product"
     Id_cus, address, v2, phone, height, weight = "", "", "", "", "", ""
     try:
@@ -195,7 +193,7 @@ def predictJson(request):
 
     pre = model.predict(pad_sequences(token.texts_to_sequences([text]),maxlen=len(token.word_counts)+1))
     lb = label[np.argmax(pre)]
-
+    
     preTypeR = modelRequest.predict(pad_sequences(tokenRequest.texts_to_sequences([text]),maxlen=len(tokenRequest.word_counts)+1))
     lbRe = labelRequest[np.argmax(preTypeR)].split(",")
     lbRequest = lbRe[-1]
@@ -239,7 +237,7 @@ def predictJson(request):
     if phone:
         lb = 'Inform'
         lbInform += 'phone' if lbInform != 'phone' else ''
-    if lbInform == 'Id member':
+    if lbInform == 'Id':
         pass
 
     if lbInform == 'amount_product' or lb == 'Order':
@@ -252,16 +250,16 @@ def predictJson(request):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
             if lb != 'Order':
                 size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
-            material = pro.material
-            if lb != 'Order':
                 amount = pro.amount
+            material = pro.material
+            price = pro.price
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
             name_pro = pro.product_name
             if lb == 'Other':
                 lb = 'Request'
     return JsonResponse({"label":lb,
                          "infor": {"size" : ",".join(set(size)), "weight": weight, "height": height, "V2": v2,
-                                 "phone": phone, "Id_cus": Id_cus, "addr": address, "material": material.lower(),
+                                 "phone": phone, "Id_cus": Id_cus, "addr": address, "price": price, "material": material.lower(),
                                  "color": ','.join(set(color)).lower(), "amount": amount,
                                  "name" : name_pro.lower(), "url": url_lst, "typeI": lbInform, "typeR": lbRequest,}
                         })
@@ -280,17 +278,18 @@ def imgPredict(request):
         name_pro = 'no-find-img'
 
     url_lst, size, color = [], [], []
-    material, amount, Id_cus = "", "", ""
+    material, amount, Id_cus, price = "", "", "", ""
     for pro in Product.objects.all():
         if unidecode(pro.product_name) == unidecode(name_pro):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
             size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
             material = pro.material
             amount = pro.amount
+            price = pro.price
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
     return JsonResponse({"label": 'Request',
                          "infor": {"size": ",".join(set(size)), "weight": "", "height": "", "V2": "",
-                                 "phone": "", "Id_cus": "", "addr": "", "material": material.lower(),
+                                 "phone": "", "Id_cus": "", "addr": "", "price": price, "material": material.lower(),
                                  "color": ','.join(set(color)).lower(), "amount": amount,
                                  "name": name_pro.lower(), "url": url_lst, "typeI": "ID_product", "typeR": "ID_product"}
                         })

@@ -66,34 +66,29 @@ class App extends Component {
             temporder = order,
             lstCusTemp = lstCus;
 
-        if(infor.name === "" && respJ.infor.name !== ""){
+        if(!infor.name && respJ.infor.name){
           temp = respJ.infor
-          if(infor.height !== '' && respJ.infor.height === ''){
+          if(infor.height && !respJ.infor.height){
             temp.height = infor.height
           }
-          if(infor.weight !== '' && respJ.infor.weight === ''){
+          if(infor.weight && !respJ.infor.weight){
             temp.weight = infor.weight
           }
-          if(infor.V2 !== '' && respJ.infor.V2 === ''){
+          if(infor.V2 && !respJ.infor.V2){
             temp.V2 = infor.V2
           }
         }
-        else if(infor.name !== "" && respJ.infor.name !== "" && respJ.infor.name !== infor.name){
+        else if(infor.name && respJ.infor.name && respJ.infor.name !== infor.name){
           temp = respJ.infor
         }
-        else if(respJ.infor.typeI === 'height' && respJ.infor.height !== ''){
-          temp.height = respJ.infor.height
-        }
-        else if(respJ.infor.typeI === 'weight' && respJ.infor.weight !== ''){
-          temp.weight = respJ.infor.weight
-        }
-        else if(respJ.infor.typeI === 'heightweight'){
+        else if((respJ.infor.typeI).includes('height') || (respJ.infor.typeI).includes('weight')){
           if(respJ.infor.height)
             temp.height = respJ.infor.height
           if(respJ.infor.weight)
             temp.weight = respJ.infor.weight
         }
-        else if(respJ.infor.typeI === 'size' && respJ.infor.size !== ''){
+        else if(respJ.infor.typeI === 'size' && respJ.infor.size){
+          console.log(infor.size)
           if(!(infor.size).includes(respJ.infor.size)){
             sizeR = 'None' + respJ.infor.size
           }
@@ -101,16 +96,16 @@ class App extends Component {
             sizeR = respJ.infor.size
           }
         }
-        else if(respJ.infor.typeI === 'V2' && respJ.infor.V2 !== ''){
+        else if(respJ.infor.typeI === 'V2' && respJ.infor.V2){
           temp.V2 = respJ.infor.V2
         }
-        else if(respJ.infor.typeI === 'phone' && respJ.infor.phone !== ''){
+        else if(respJ.infor.typeI === 'phone' && respJ.infor.phone){
           temp.phone = respJ.infor.phone
         }
-        else if(respJ.infor.typeI === 'address' && respJ.infor.addr !== ''){
+        else if(respJ.infor.typeI === 'address' && respJ.infor.addr){
           temp.addr = respJ.infor.addr
         }
-        else if(respJ.infor.typeI === 'amount_product' && respJ.infor.amount !== ''){
+        else if(respJ.infor.typeI === 'amount_product' && respJ.infor.amount){
           temp.amount = respJ.infor.amount
         }
         if(respJ.label === 'Request'){
@@ -121,14 +116,13 @@ class App extends Component {
           } 
           else if(respJ.infor.typeR === 'size'){
             let temp1 = conversation.slice(-2)
-            console.log(temp1)
             if(temp1[0].includes('User: ') && previousIntent === 'Inform'){
               stateConvUpdate = 'sizeadvisory'
               infor.typeI = 'height'
               check = true
             }
           }
-          if(infor.typeR !== "no-find-img" && respJ.infor.name === ''){
+          if(infor.typeR !== "no-find-img" && !respJ.infor.name){
             temp.typeR = respJ.infor.typeR
             if(!check)
               temp.typeI = respJ.infor.typeI
@@ -141,7 +135,7 @@ class App extends Component {
           if((respJ.infor.typeI === 'size' || respJ.infor.typeR === 'size') && stateConv !== 'order'){
             stateConvUpdate = 'sizeadvisory'
           }
-          if(respJ.infor.height !== '' || respJ.infor.weight !== '' || respJ.infor.V2 !== ''){
+          if(respJ.infor.height || respJ.infor.weight || respJ.infor.V2){
             stateConvUpdate = 'sizeadvisory'
           }
           temp.typeI = respJ.infor.typeI
@@ -171,43 +165,42 @@ class App extends Component {
           temp.typeR = respJ.infor.typeR
         }
         if(stateConv === 'order' || respJ.label === 'Order'){
-          if(respJ.infor.name !== '' && order.name_product === ''){
+          if(respJ.infor.name && !order.name_product){
             temporder.name_product = respJ.infor.name
           }
-          else if(respJ.infor.name === '' && infor.name !== ''){
+          else if(!respJ.infor.name && infor.name){
             temporder.name_product = infor.name
           }
-          if(respJ.infor.addr !== '' && order.addr === '' ){
+          if(respJ.infor.addr && !order.addr){
             temporder.addr = respJ.infor.addr
           }
-          if(respJ.infor.phone !== '' && order.phone === ''){
+          if(respJ.infor.phone && !order.phone){
             temporder.phone = respJ.infor.phone
           }
-          if(respJ.infor.amount !== '' && order.amount === ''){
+          if(respJ.infor.amount && !order.amount){
             temporder.amount = respJ.infor.amount
           }
-          if(respJ.infor.Id_cus !== '' && order.name_cus === ''){
+          if(respJ.infor.Id_cus && !order.name_cus){
             temporder.name_cus = respJ.infor.Id_cus
           }
-          if(respJ.infor.size !== '' && order.size === ''){
-            temporder.size = respJ.infor.size
+          if(sizeR && (!order.size || order.size.includes('None'))){
+            temporder.size = sizeR
           }
-          else if (respJ.infor.size === '' && this.state.sizeR !== ''){
-            temporder.size = this.state.sizeR 
+          else if (!sizeR && this.state.sizeR){
+            temporder.size = this.state.sizeR
           }
           temporder.price = temporder.amount * infor.price
-        }
-        if(respJ.label === 'Order'){
           stateConvUpdate = 'order'
         }
-        if(respJ.label === 'Request')
+        if(respJ.label === 'Request' || respJ.label === 'Order'){
           lstCusTemp.push([respJ.label, respJ.infor.typeI, respJ.infor.typeR])
+        }
         this.setState({
           sizeR,
           stateConv: stateConvUpdate,
           infor: temp,
           order: temporder,
-          lstCus:lstCusTemp,
+          lstCus: lstCusTemp,
           previousIntent: respJ.label
         })
       })
@@ -226,16 +219,16 @@ class App extends Component {
       const { infor } = this.state;
       let temp = respJ.infor;
 
-      if(infor.typeR !== ''){
+      if(infor.typeR){
         temp.typeR = infor.typeR;
       }
-      if(infor.height !== ''){
+      if(infor.height){
         temp.height = infor.height
       }
-      if(infor.weight !== ''){
+      if(infor.weight){
         temp.weight = infor.weight
       }
-      if(infor.V2 !== ''){
+      if(infor.V2){
         temp.V2 = infor.V2
       }
       this.setState({
@@ -356,13 +349,13 @@ class App extends Component {
               {
                 id: 'reply',
                 message:(value)=>{
-                  var mess = "";
                   var {conversation, infor, stateConv, order, sizeR, lstCus, prediction} = this.state;
                   console.log(infor)
                   var {typeI, typeR} = infor;
-                  var newcon = conversation;
-                  var many = false;
-                  if (lstCus.length > 1){
+                  var newcon = conversation,
+                      many = false,
+                      mess = "";
+                  if (lstCus.length >= 1){
                     many = true;
                     prediction = lstCus[0][0];
                     typeI = lstCus[0][1]
@@ -382,7 +375,7 @@ class App extends Component {
                   }
                   if (prediction === 'Inform') {
                     mess = reply.Inform
-                    if(infor.name === ''){
+                    if(!infor.name){
                       mess = reply.Request.not_ID_product
                     }
                     else if(stateConv === 'sizeadvisory'){
@@ -393,7 +386,7 @@ class App extends Component {
                           mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                         }
                       }
-                      if(infor.ID_product === ''){
+                      if(!infor.name){
                         prediction = 'Request'
                       }
                       else if(sizeR.includes('None')){
@@ -403,13 +396,13 @@ class App extends Component {
                         mess = reply.Request.sizeadvisory
                       }
                       else{
-                        if (infor.height === ''){
+                        if (!infor.height){
                           mess = reply.Request['height-customer']
                         }
-                        else if(infor.V2 === ''){
+                        else if(!infor.V2){
                           mess = reply.Request['V2-customer']
                         }
-                        else if(infor.weight === ''){
+                        else if(!infor.weight){
                           mess = reply.Request['weight-customer']
                         }
                         else if(t !== 'Nonesize'){
@@ -431,14 +424,14 @@ class App extends Component {
                   if (prediction === 'Request'){
                     if (typeR === 'ID_product'){
                       mess = infor.name + ' còn hàng á. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn size cho bạn nha.'
-                      if(infor.name === ''){
+                      if(!infor.name){
                         mess = reply.Request.not_found_product
                       }
                       else if(infor.amount === 0){
                         mess = infor.name + reply.Request['out-of-pro']
                       }
                     }
-                    else if(infor.name === ''){
+                    else if(!infor.name){
                       mess = reply.Request.not_ID_product
                     }
                     else if(typeR === 'amount_product'){
@@ -475,13 +468,13 @@ class App extends Component {
                           }
                         }
                         else {
-                          if(infor.weight === ''){
+                          if(!infor.weight){
                             mess = reply.Request['weight-customer']
                           }
-                          else if (infor.height === ''){
+                          else if (!infor.height){
                             mess = reply.Request['height-customer']
                           }
-                          else if (infor.V2 === ''){
+                          else if (!infor.V2){
                             mess = reply.Request['V2-customer']
                           }
                           else{
@@ -500,34 +493,38 @@ class App extends Component {
                       mess = infor.name + ' còn màu ' + infor.color + ' nha.'
                     }
                     else if (typeR === 'cost_product'){
-                      mess = infor.name + ' có giá 380k giảm còn 195k nha.'
+                      mess = infor.name + ' có giá ' + infor.price +'k nha.'
                     }
                     else {
                       mess = reply.Request[typeR]
                     }
                   }
                   if (prediction === 'Order'){
-                    if(infor.name === ''){
+                    console.log(order)
+                    if(!infor.name){
                       mess = reply.Request.not_ID_product
                     }
                     else if(infor.amount === 0){
                       mess = infor.name + reply.Request['out-of-pro']
                     }
-                    else if(order.name_product === ''){
+                    else if(!order.name_product){
                       mess = reply.Order.ID_product
                     }
-                    else if(order.size === ''){
+                    else if(!order.size){
                       mess = reply.Order.size
                     }
-                    else if(order.phone === ''){
-                      mess = reply.Order.phone
+                    else if(order.size.includes('None')){
+                      mess = 'Xin lỗi bạn bên mình hết size ' + order.size.slice(-1) + ' rồi nha. Bạn chọn size khác giúp mình với ạ.'
                     }
-                    else if(order.addr === ''){
+                    else if(!order.phone){
+                      mess = reply.Order.phone
+                    }/* 
+                    else if(!order.addr){
                       mess = reply.Order.address
                     }
-                    else if(order.name === ''){
+                    else if(!order.name){
                       mess = reply.Order.name
-                    }
+                    } */
                     else {
                       mess = reply.Order.check
                     }
@@ -576,19 +573,19 @@ class App extends Component {
                     this.conversationUpdate(newcon)
                     return mess
                   }
-                  newcon.push('Bot: ' + mess)
-                  this.setState({
-                    conversation: newcon,
-                    previousReply: mess,
-                  })
                   let m = conversation.slice(-1);
-                  if(m[0].includes('Bot:') || many){
-                    if(!value.steps.reply)
-                      return mess
-                    if(value.steps.reply.message === mess)
+                  if(!m[0].includes('User:') && many){
+                    if(value.steps.reply && value.steps.reply.message === mess)
                     {
-                      return 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse'
+                      mess = 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse'
                     }
+                  }
+                  if(mess !== 'gypERR!sackError:Col o id nyVisualStuio nstallationtouse'){
+                    newcon.push('Bot: ' + mess)
+                    this.setState({
+                      conversation: newcon,
+                      previousReply: mess,
+                    })
                   }
                   return mess
                 },
@@ -623,7 +620,13 @@ class App extends Component {
               },
               {
                 id: 'newproduct',
-                message: 'Bạn muốn tư vấn sản phẩm khác ko ạ?',
+                message: () => {
+                  var newm = this.state.conversation,
+                      mess = 'Bạn muốn tư vấn sản phẩm khác ko ạ?'
+                  newm.push('Bot: ' + mess);
+                  this.setState({conversation: newm});
+                  return mess;
+                },
                 trigger: 'user'
               },
               {
@@ -638,25 +641,37 @@ class App extends Component {
               {
                 id: 'ordername',
                 message:() => {
-                  const {order} = this.state;
-                  return 'Tên người nhận: ' + order.name_cus
+                  const {order, conversation} = this.state;
+                  var mess = 'Tên người nhận: ' + order.name_cus,
+                      newm = conversation;
+                  newm.push('Bot: ' + mess);
+                  this.setState({conversation: newm});
+                  return mess;
                 },
                 trigger: 'orderphone-address'
               },
               {
                 id: 'orderphone-address',
                 message: () => {
-                  const {order} = this.state;
-                  return 'Sđt: ' + order.phone + '. Địa chỉ: ' + order.addr + '.'
+                  const {order, conversation} = this.state;
+                  var mess = 'Sđt: ' + order.phone + '. Địa chỉ: ' + order.addr + '.',
+                      newm = conversation;
+                  newm.push('Bot: ' + mess);
+                  this.setState({conversation: newm});
+                  return mess;
                 },
                 trigger: 'product'
               },
               {
                 id: 'product',
                 message: () => {
-                  const {order} = this.state;
+                  const {order, conversation} = this.state;
                   this.setState({previousReply: 'doneOrder'})
-                  return String(order.amount) + ' ' + order.name_product + ' size ' + order.size + '. Tổng cộng đơn hàng là ' + order.price + ' nha.'
+                  var mess = String(order.amount) + ' ' + order.name_product + ' size ' + order.size + '. Tổng cộng đơn hàng là ' + order.price + 'k nha.',
+                      newm = conversation;
+                  newm.push('Bot: ' + mess);
+                  this.setState({conversation: newm});
+                  return mess;
                 },
                 trigger: 'user'
               }
