@@ -180,10 +180,10 @@ def extractHeight(x):
     elif re.search(r'[\.]\d{1,2}',x):
         return 100 + int((re.sub(r'\.','',x)+'0')[:2])
 def predictJson(request):
-    size, color, url_lst = [], [], []
-    name_pro, amount, material, price = "", "", "", ""
-    lbRequest, lbInform = "ID_product", "ID_product"
-    Id_cus, address, v2, phone, height, weight = "", "", "", "", "", ""
+    size = color = url_lst = []
+    name_pro = amount = material = price = ""
+    lbRequest = lbInform = "ID_product"
+    Id_cus = address = v2 = phone = height = weight = ""
     try:
         data = json.loads(request.body)
         text = data['text'].encode().decode('utf-8')
@@ -205,9 +205,9 @@ def predictJson(request):
     '''Extract entity'''
     lst = []
     try:
-        temp = re.findall(r'(size|sz|sai|sie|siz)\s*(s|m|l|S|M|L)',text)
+        temp = re.findall(r'(size|sz|sai|sie|siz)\s*(s|m|l)',text)
         if not temp:
-            temp = re.findall(r'(mặc|mac|măc|mạc)\s*(s|m|l|S|M|L)\s',text)
+            temp = re.findall(r'(mặc|mac|măc|mạc)\s*(s|m|l)\s',text)
         size = [i[1].upper() for i in temp]
     except:
         pass
@@ -216,13 +216,13 @@ def predictJson(request):
             v2 = int(re.findall(r'\d{2,3}',text)[0])
         except:
             pass
-    if re.search('height',lbInform):
+    if 'height' in lbInform:
         try:
             temp = re.findall(r"(\d*(m|met|mét|\.)\s*\d{1,2}|\d{3})",text)
             height = extractHeight(temp[0][0]) if len(temp)>0 else ""
         except:
             pass
-    if re.search('weight',lbInform):
+    if 'weight' in lbInform:
         try:
             temp = re.findall(r"(\d{2,3}[\s\D]{0,1}(k\w))",text)
             weight = int(re.sub(r'[\s\D]{0,1}(k\w)','',temp[0][0]))
@@ -251,10 +251,8 @@ def predictJson(request):
             if lb != 'Order':
                 size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
                 amount = pro.amount
-            material = pro.material
-            price = pro.price
+            material, price, name_pro = pro.material, pro.price, pro.product_name
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
-            name_pro = pro.product_name
             if lb == 'Other':
                 lb = 'Request'
     return JsonResponse({"label":lb,
@@ -277,15 +275,13 @@ def imgPredict(request):
     except:
         name_pro = 'no-find-img'
 
-    url_lst, size, color = [], [], []
-    material, amount, Id_cus, price = "", "", "", ""
+    url_lst = size = color = []
+    material = amount = Id_cus = price = ""
     for pro in Product.objects.all():
         if unidecode(pro.product_name) == unidecode(name_pro):
             url_lst = [i.image.url for i in ImageProduct.objects.filter(product_id=pro.id)]
             size = [i.name.upper() for i in SizeProduct.objects.filter(product_id=pro.id) if i.amount > 0]
-            material = pro.material
-            amount = pro.amount
-            price = pro.price
+            material, amount, price = pro.material, pro.amount, pro.price
             color = [i.name for i in ColorProduct.objects.filter(product_id=pro.id)]
     return JsonResponse({"label": 'Request',
                          "infor": {"size": ",".join(set(size)), "weight": "", "height": "", "V2": "",

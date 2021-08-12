@@ -88,7 +88,6 @@ class App extends Component {
             temp.weight = respJ.infor.weight
         }
         else if(respJ.infor.typeI === 'size' && respJ.infor.size){
-          console.log(infor.size)
           if(!(infor.size).includes(respJ.infor.size)){
             sizeR = 'None' + respJ.infor.size
           }
@@ -131,7 +130,7 @@ class App extends Component {
             temp = respJ.infor
           }
         }
-        else if (respJ.label === 'Inform'){
+        else if(respJ.label === 'Inform'){
           if((respJ.infor.typeI === 'size' || respJ.infor.typeR === 'size') && stateConv !== 'order'){
             stateConvUpdate = 'sizeadvisory'
           }
@@ -186,7 +185,7 @@ class App extends Component {
           if(sizeR && (!order.size || order.size.includes('None'))){
             temporder.size = sizeR
           }
-          else if (!sizeR && this.state.sizeR){
+          else if(!sizeR && this.state.sizeR){
             temporder.size = this.state.sizeR
           }
           temporder.price = temporder.amount * infor.price
@@ -278,7 +277,7 @@ class App extends Component {
       }
       return 'M'
     }
-    else if (v2 >= 55 && v2 <= 74){
+    else if(v2 >= 55 && v2 <= 74){
       if(v2 <= 66){
         return 'S'
       }
@@ -355,13 +354,13 @@ class App extends Component {
                   var newcon = conversation,
                       many = false,
                       mess = "";
-                  if (lstCus.length >= 1){
+                  if(lstCus.length >= 1){
                     many = true;
                     prediction = lstCus[0][0];
                     typeI = lstCus[0][1]
                     typeR = lstCus[0][2]
                   }
-                  if (prediction === 'Other'){
+                  if(prediction === 'Other'){
                     mess = reply.Other
                     if(stateConv === 'sizeadvisory'){
                       prediction = 'Inform'
@@ -373,21 +372,18 @@ class App extends Component {
                       prediction = 'Order'
                     }
                   }
-                  if (prediction === 'Inform') {
+                  if(prediction === 'Inform') {
                     mess = reply.Inform
                     if(!infor.name){
                       mess = reply.Request.not_ID_product
                     }
                     else if(stateConv === 'sizeadvisory'){
                       let t = this.consultation(infor.height, infor.weight, infor.V2);
-                      if(t !== 'Nonesize'){
+                      if(t !== 'Nonesize' && typeI !== 'size'){
                         mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
                         if(!infor.size.includes(t)){
                           mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                         }
-                      }
-                      if(!infor.name){
-                        prediction = 'Request'
                       }
                       else if(sizeR.includes('None')){
                         mess = 'Xin lỗi bạn bên mình hết size ' + sizeR.slice(-1) + ' rồi nha.'
@@ -396,7 +392,7 @@ class App extends Component {
                         mess = reply.Request.sizeadvisory
                       }
                       else{
-                        if (!infor.height){
+                        if(!infor.height){
                           mess = reply.Request['height-customer']
                         }
                         else if(!infor.V2){
@@ -404,12 +400,6 @@ class App extends Component {
                         }
                         else if(!infor.weight){
                           mess = reply.Request['weight-customer']
-                        }
-                        else if(t !== 'Nonesize'){
-                          mess = 'Vậy bạn mặc size ' + t + ' là siêu đẹp luôn nha.'
-                          if(!infor.size.includes(t)){
-                            mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
-                          }
                         }
                         else mess = reply.Request['not-found-size']
                       }
@@ -421,8 +411,8 @@ class App extends Component {
                       prediction = 'Request'
                     }
                   }
-                  if (prediction === 'Request'){
-                    if (typeR === 'ID_product'){
+                  if(prediction === 'Request'){
+                    if(typeR === 'ID_product'){
                       mess = infor.name + ' còn hàng á. Chất liệu ' + infor.material + ' nha. Bạn cho mình số đo mình tư vấn size cho bạn nha.'
                       if(!infor.name){
                         mess = reply.Request.not_found_product
@@ -442,7 +432,7 @@ class App extends Component {
                         mess = infor.name + ' còn hàng nha. Bạn cho mình xin số đo mình tư vấn size cho bạn nha.'
                       } 
                     }
-                    else if (typeR === 'size'){
+                    else if(typeR === 'size'){
                       mess = infor.name + ' còn size ' + infor.size + ' nha.'
                       if(!(infor.weight && infor.height)){
                         mess += ' Bạn cho mình xin chiều cao cân nặng mình tư vấn thêm cho bạn nha!'
@@ -461,20 +451,17 @@ class App extends Component {
                             mess += ' Nhưng mà bên mình hết size ' + t + ' rồi bạn thông cảm nha.'
                           }
                         }
-                        else if(typeI === 'size'){
-                          mess = reply.Request.sizeadvisory
-                          if(infor.size.includes('None')){
-                            mess = 'Xin lỗi bạn bên mình hết size ' + infor.size.slice(-1) + ' rồi nha.'
-                          }
+                        else if(infor.size.includes('None')){
+                          mess = 'Xin lỗi bạn bên mình hết size ' + infor.size.slice(-1) + ' rồi nha.'
                         }
                         else {
                           if(!infor.weight){
                             mess = reply.Request['weight-customer']
                           }
-                          else if (!infor.height){
+                          else if(!infor.height){
                             mess = reply.Request['height-customer']
                           }
-                          else if (!infor.V2){
+                          else if(!infor.V2){
                             mess = reply.Request['V2-customer']
                           }
                           else{
@@ -483,32 +470,29 @@ class App extends Component {
                         }
                       }
                     }
-                    else if (typeR === 'material_product'){
+                    else if(typeR === 'material_product'){
                       mess = 'Dạ ' + infor.name + ' chất ' + infor.material + ' nha.'
                     }
-                    else if (typeR === 'product_image'){
+                    else if(typeR === 'product_image'){
                       mess = 'Dạ đây ạ.'
                     }
-                    else if (typeR === 'color_product'){
+                    else if(typeR === 'color_product'){
                       mess = infor.name + ' còn màu ' + infor.color + ' nha.'
                     }
-                    else if (typeR === 'cost_product'){
+                    else if(typeR === 'cost_product'){
                       mess = infor.name + ' có giá ' + infor.price +'k nha.'
                     }
                     else {
                       mess = reply.Request[typeR]
                     }
                   }
-                  if (prediction === 'Order'){
+                  if(prediction === 'Order'){
                     console.log(order)
                     if(!infor.name){
                       mess = reply.Request.not_ID_product
                     }
                     else if(infor.amount === 0){
                       mess = infor.name + reply.Request['out-of-pro']
-                    }
-                    else if(!order.name_product){
-                      mess = reply.Order.ID_product
                     }
                     else if(!order.size){
                       mess = reply.Order.size
@@ -530,17 +514,17 @@ class App extends Component {
                     }
                     this.setState({stateConv: 'order'})
                   }
-                  if (prediction === 'Changing' || prediction === 'Return'){
+                  if(prediction === 'Changing' || prediction === 'Return'){
                     mess = reply['Changing-Return']
                     this.setState({stateConv:'changing'})
                   }
-                  if (prediction === 'feedback'){
+                  if(prediction === 'feedback'){
                     mess = reply.Done
                   }
-                  if (prediction === 'Hello' || prediction === 'Connect'){
+                  if(prediction === 'Hello' || prediction === 'Connect'){
                     mess = reply['Hello-Connect']
                   }
-                  if (prediction === 'OK'){
+                  if(prediction === 'OK'){
                     mess = reply.OK
                     if(stateConv === 'sizeadvisory' && this.state.previousReply !== reply.Request['not-found-size']){
                       this.setState({stateConv:'order'})
@@ -553,7 +537,7 @@ class App extends Component {
                       }
                     }
                   }
-                  if (prediction === 'Done'){
+                  if(prediction === 'Done'){
                     mess = reply.Done
                     this.setState({
                       sizeR: '',
