@@ -7,7 +7,7 @@ import regex as re
 import bogo
 from unidecode import unidecode
 from .models import Conversation, Product, ImageProduct, ColorProduct, SizeProduct, Order
-from PIL import Image, ImageChops
+from PIL import Image
 from io import BytesIO
 import base64
 from tensorflow.keras.preprocessing.image import img_to_array, load_img, ImageDataGenerator
